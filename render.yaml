@@ -1,0 +1,49 @@
+# نوبتین — نقشهٔ استقرار روی Render (render.com)
+#
+# این فایل فقط «نصبِ خودکار» است: هیچ کدی در برنامه عوض نمی‌شود. با آن، ساخت‌وسازِ
+# Render از همین مخزن گیت‌هاب یک سرویس رایگان بالا می‌آورد، بدون اینکه کسی مقدارها را
+# دستی تایپ کند. برای سرور واقعیِ خودتان، بستهٔ `deploy/` (systemd + nginx) را ببینید.
+#
+# چند نکتهٔ امنیتی که عمداً همین‌طور انتخاب شده‌اند:
+#  • NOBATIN_ENV=production → برنامه fail-closed بالا می‌آید: بدون SECRET، با هاست
+#    ناشناس، یا با درگاه آزمایشیِ بی‌اجازه اجرا نمی‌شود (core/config.py).
+#  • NOBATIN_OTP_MASTER=0 → «کد مستر» که می‌تواند هر حسابی را باز کند، خاموش است.
+#  • NOBATIN_SECRET با generateValue ساخته می‌شود؛ در این فایل و در گیت‌هاب نوشته نشده.
+#  • NOBATIN_TRUSTED_HOSTS فقط همان یک دامنهٔ سرویس است (نه `*.onrender.com`) تا هاست
+#    جعلی نتواند لینک‌های پیامک/بازگشتِ درگاه را به سمت دیگری بکشاند.
+#  • مسیر دیتابیس روی /tmp است (دیسک موقت Render)، پس هر redeploy با دادهٔ نمونه از نو
+#    ساخته می‌شود — برای دموی بازبینی خواستنی است؛ برای دادهٔ واقعی باید دیسک پایدار گرفت.
+services:
+  - type: web
+    name: nobatin-demo
+    runtime: python
+    plan: free
+    region: oregon
+    buildCommand: pip install -r requirements.txt
+    startCommand: python wsgi.py
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12"
+      - key: NOBATIN_ENV
+        value: production
+      - key: NOBATIN_HOST
+        value: 0.0.0.0
+      - key: NOBATIN_SECRET
+        generateValue: true
+      - key: NOBATIN_TRUSTED_HOSTS
+        # اگر نام سرویس عوض شد، همین‌جا را هم یک‌بار اصلاح کنید، وگرنه برنامه عمداً
+        # بالا نمی‌آید و در لاگِ Render پیغام فارسیِ «فهرست هاست‌های مجاز» را می‌بینید.
+        value: nobatin-demo.onrender.com
+      - key: NOBATIN_BEHIND_PROXY
+        value: "1"
+      - key: NOBATIN_ALLOW_SANDBOX
+        value: "1"
+      - key: NOBATIN_OTP_MASTER
+        value: "0"
+      - key: NOBATIN_SEED
+        value: "1"
+      - key: NOBATIN_SMS_MASK_OTP
+        value: "0"
+      - key: NOBATIN_INSTANCE_DIR
+        value: /tmp/nobatin-instance
