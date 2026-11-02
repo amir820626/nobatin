@@ -1,0 +1,12 @@
+[Unit]
+Description=Nobatin: send due appointment reminders (SMS)
+
+[Service]
+Type=oneshot
+User=nobatin
+Group=nobatin
+WorkingDirectory=/srv/nobatin
+EnvironmentFile=/srv/nobatin/.env
+Environment=NOBATIN_ENV=production
+ExecStart=/srv/nobatin/.venv/bin/python app.py --send-reminders
+Nice=10

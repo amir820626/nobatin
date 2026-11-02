@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% from "macros/ui.html" import ic, status_badge, empty, kpi, policy_list %}
+{% block title %}نوبت‌های من{% endblock %}
+{% block content %}
+<div class="section" style="margin-top:22px">
+  <div class="row-between">
+    <div><span class="eyebrow">{{ ic('ticket', 13) }} حساب شما</span><h1>نوبت‌های من</h1></div>
+    <a class="btn" href="{{ url_for('public.search') }}">{{ ic('search', 16) }} پیدا کردن خدمت تازه</a>
+  </div>
+
+  <div class="kpi" style="margin:16px 0">
+    {{ kpi(stats.n, 'نوبت پیشِ رو') }}
+    {{ kpi(stats.waiting, 'در انتظار پرداخت', 'amber' if stats.waiting) }}
+    {{ kpi(stats.spent|money, 'تومان پرداخت‌شده') }}
+    {{ kpi(stats.refunded|money, 'تومان بازپرداخت‌شده') }}
+  </div>
+
+  <div class="two-col">
+    <div class="stack">
+      <h2>{{ ic('cal', 18) }} پیشِ رو</h2>
+      {% for a in active %}
+      <div class="ticket" style="{{ 'background:#fffdf8' }}">
+        <span class="stub" style="--biz-hue:{{ a.hue }}"></span>
+        <div class="ticket-head">
+          <div>
+            <h3>{{ a.svc }}</h3>
+            <span class="small muted"><a class="link" href="{{ url_for('public.business_page', slug=a.slug) }}">{{ a.biz }}</a>
+              — {{ a.city or '' }}</span>
+          </div>
+          {{ status_badge(a.status) }}
+        </div>
+        <div class="when">
+          <div class="big" style="--biz-hue:{{ a.hue }}">{{ a.start_hm|fa }}<small>{{ a.date|jdate }}</small></div>
+          <dl class="kv grow">
+            <dt>مدت</dt><dd>{{ a.duration_min|dur }}</dd>
+            <dt>مبلغ</dt><dd>{{ a.amount|money }} تومان
+              {% if a.payable_now != a.amount %}<span class="tiny muted">(پرداخت‌شدهٔ آنلاین: {{ a.payable_now|money }})</span>{% endif %}</dd>
+            <dt>پشتیبانی</dt><dd class="num small">{{ a.biz_phone }}</dd>
+          </dl>
+        </div>
+        {% if a.status == 'pending_payment' %}
+        <div class="msg warn" style="margin:10px 0 0">
+          {{ ic('bolt', 15) }} <span>این نوبت هنوز قطعی نیست. تا پرداخت موفق، زمان رزرو‌شده باقی نمی‌ماند.</span></div>
+        <div class="perforated"></div>
+        <div class="ticket-foot">
+          <span class="code num">{{ a.code }}</span>
+          <div class="row" style="gap:8px">
+            <a class="btn btn-sm" href="{{ url_for('booking.retry_payment', aid=a.id) }}">{{ ic('wallet', 15) }} پرداخت و قطعی‌کردن</a>
+            <form method="post" action="{{ url_for('customer.cancel', aid=a.id) }}" data-confirm="لغو این رزرو؟">
+            {{ csrf() }}
+              <input type="hidden" name="back" value="{{ url_for('customer.panel') }}">
+              <button class="btn btn-ghost btn-sm" type="submit">حذف رزرو</button>
+            </form>
+          </div>
+        </div>
+        {% else %}
+        <div class="perforated"></div>
+        <div class="ticket-foot">
+          <span class="code num">{{ a.code }}</span>
+          <div class="row" style="gap:8px">
+            <a class="btn btn-ghost btn-sm" href="{{ url_for('customer.detail', aid=a.id) }}">{{ ic('ticket', 15) }} جزئیات و جابه‌جایی</a>
+            <a class="btn btn-ghost btn-sm" href="{{ url_for('public.business_page', slug=a.slug) }}">مسیر و تماس</a>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+      {% else %}
+        {% call empty('نوبتی ندارید.', 'ticket', 'یک خدمت پیدا کن و در دو دقیقه نوبت بگیر.') %}
+          <a class="btn" href="{{ url_for('public.home') }}">شروع از صفحهٔ اصلی</a>
+        {% endcall %}
+      {% endfor %}
+
+      {% if history %}
+      <h2 style="margin-top:26px">{{ ic('inbox', 18) }} تاریخچه</h2>
+      <div class="table-wrap">
+        <table class="t">
+          <thead><tr><th>کد</th><th>کسب‌وکار</th><th>خدمت</th><th>زمان</th><th>وضعیت</th><th>بازپرداخت</th></tr></thead>
+          <tbody>
+            {% for a in history %}
+            <tr>
+              <td><a class="link num" href="{{ url_for('customer.detail', aid=a.id) }}">{{ a.code }}</a></td>
+              <td>{{ a.biz }}</td><td>{{ a.svc }}</td>
+              <td class="num small">{{ a.date|jdate }} — {{ a.start_hm|fa }}</td>
+              <td>{{ status_badge(a.status) }}</td>
+              <td class="money tiny">{{ (a.refund_amt or 0)|money }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+    </div>
+
+    <aside class="stack">
+      <div class="card">
+        <h3>{{ ic('wallet', 16) }} تراکنش‌های من</h3>
+        <ul class="stack" style="gap:10px">
+          {% for t in txs %}
+          <li class="row-between small" style="gap:6px;border-bottom:1px dashed var(--line);padding-bottom:8px">
+            <div>
+              <div class="strong num">{{ t.reference }}</div>
+              <div class="tiny muted">{{ t.created_at|jdatetime }} — {{ tx_kind.get(t.kind, t.kind) }}</div>
+            </div>
+            <div style="text-align:left">
+              <div class="money">{{ t.amount|money }}</div>
+              {{ status_badge(t.status) }}
+            </div>
+          </li>
+          {% else %}<li class="small muted">تراکنشی ثبت نشده است.</li>{% endfor %}
+        </ul>
+      </div>
+      <div class="card">
+        <h3>{{ ic('shield', 16) }} بازپرداخت‌ها</h3>
+        <ul class="stack" style="gap:9px">
+          {% for r in refunds %}
+          <li class="small">
+            <div class="row-between"><span class="num strong">{{ r.code }}</span><span class="money">{{ r.amount|money }}</span></div>
+            <div class="tiny muted">{{ r.rule_label }} — {{ status_badge(r.status) }}</div>
+          </li>
+          {% else %}<li class="small muted">درخواست بازپرداختی ندارید.</li>{% endfor %}
+        </ul>
+      </div>
+      <div class="card card-flat small">
+        <b>{{ ic('chat', 15) }} پیامک‌ها</b>
+        <p class="muted tiny">تأیید، یادآوری و تغییرات به شمارهٔ {{ user.mobile }} ارسال می‌شود.
+          <a class="link" href="{{ url_for('public.sms_box') }}">مشاهدهٔ صندوق</a></p>
+      </div>
+    </aside>
+  </div>
+</div>
+{% endblock %}

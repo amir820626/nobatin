@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>راهنمای مرحله‌به‌مرحلهٔ بردن نوبتین روی گیت‌هاب</title>
+<style>
+@font-face { font-family: Vazirmatn; src: url("../static/fonts/vazirmatn-regular.woff2") format("woff2"); font-weight: 400; }
+@font-face { font-family: Vazirmatn; src: url("../static/fonts/vazirmatn-medium.woff2") format("woff2"); font-weight: 500; }
+@font-face { font-family: Vazirmatn; src: url("../static/fonts/vazirmatn-semibold.woff2") format("woff2"); font-weight: 600; }
+@font-face { font-family: Vazirmatn; src: url("../static/fonts/vazirmatn-bold.woff2") format("woff2"); font-weight: 700; }
+@font-face { font-family: Vazirmatn; src: url("../static/fonts/vazirmatn-extrabold.woff2") format("woff2"); font-weight: 800; }
+
+:root {
+  --ink: #101a2c; --ink-2: #35435a; --ink-3: #6a7891;
+  --paper: #ffffff; --paper-2: #f6f3ec;
+  --line: #e2ddd0; --line-2: #d3ccbb;
+  --jade: #12b39a; --jade-dark: #0a8570; --jade-soft: #d9f5ef;
+  --saffron: #f4a52a; --saffron-soft: #fdefd4;
+  --berry: #d9436a; --berry-soft: #fbe2ea;
+  --sky: #2f7fd1; --sky-soft: #dfeefc;
+}
+* { box-sizing: border-box; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body {
+  font-family: Vazirmatn, "Segoe UI", Tahoma, sans-serif;
+  color: var(--ink); background: var(--paper);
+  margin: 0; font-size: 10.4pt; line-height: 1.85;
+}
+@page { size: A4; margin: 15mm 14mm 16mm 14mm; }
+
+/* ── جلد ───────────────────────────────────────────── */
+.cover { border: 2px solid var(--ink); border-radius: 14px; padding: 22px 24px; background: var(--paper-2); }
+.cover .brand { font-weight: 800; font-size: 25pt; line-height: 1.3; margin: 0; }
+.cover .sub { font-size: 12.5pt; color: var(--ink-2); margin: 4px 0 14px; }
+.cover .tag { display: inline-block; background: var(--jade); color: #fff; border-radius: 999px;
+  padding: 2px 13px; font-size: 9.5pt; font-weight: 600; margin-inline-end: 6px; }
+.meta { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; margin-top: 16px; }
+.meta div { background: #fff; border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; }
+.meta b { display: block; font-size: 12.5pt; font-weight: 700; color: var(--jade-dark); }
+.meta span { font-size: 8.6pt; color: var(--ink-3); }
+
+/* ── عنوان‌ها ──────────────────────────────────────── */
+h1 { font-size: 15.5pt; font-weight: 800; margin: 26px 0 8px; padding-bottom: 6px;
+     border-bottom: 2.5px solid var(--jade); break-after: avoid; }
+h1 .no { color: var(--jade-dark); }
+h2 { font-size: 11.8pt; font-weight: 700; margin: 16px 0 5px; color: var(--ink); break-after: avoid; }
+h3 { font-size: 10.6pt; font-weight: 600; margin: 12px 0 4px; color: var(--ink-2); break-after: avoid; }
+p { margin: 6px 0; }
+ul, ol { margin: 6px 0 6px 0; padding-inline-start: 20px; }
+li { margin: 3px 0; }
+a { color: var(--sky); text-decoration: none; border-bottom: 1px dotted var(--sky); }
+strong { font-weight: 700; }
+.small { font-size: 9pt; color: var(--ink-3); }
+
+/* ── جعبه‌ها ───────────────────────────────────────── */
+.box { border: 1px solid var(--line-2); border-radius: 10px; padding: 10px 13px; margin: 10px 0;
+       background: #fff; break-inside: avoid; }
+.box.note  { border-inline-start: 4px solid var(--sky); background: var(--sky-soft); }
+.box.tip   { border-inline-start: 4px solid var(--jade); background: var(--jade-soft); }
+.box.warn  { border-inline-start: 4px solid var(--saffron); background: var(--saffron-soft); }
+.box.danger{ border-inline-start: 4px solid var(--berry); background: var(--berry-soft); }
+.box .t { font-weight: 700; display: block; margin-bottom: 2px; }
+
+/* ── کد ────────────────────────────────────────────── */
+pre {
+  direction: ltr; text-align: left; unicode-bidi: plaintext;
+  background: #0f1626; color: #e7eefc; border-radius: 9px; padding: 9px 12px;
+  font-family: "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  font-size: 8.6pt; line-height: 1.7; white-space: pre-wrap; word-break: break-word;
+  margin: 8px 0; break-inside: avoid;
+}
+pre .c { color: #8fa3c4; }        /* کامنت */
+pre .k { color: #7ee7c7; }        /* دستور */
+code {
+  direction: ltr; unicode-bidi: embed;
+  background: var(--paper-2); border: 1px solid var(--line); border-radius: 5px;
+  padding: 0 4px; font-family: Consolas, "DejaVu Sans Mono", monospace; font-size: 9pt;
+}
+.path { background: #eef2f8; border-radius: 4px; padding: 0 5px; font-size: 9pt; white-space: nowrap; }
+
+/* ── جدول ──────────────────────────────────────────── */
+table { width: 100%; border-collapse: collapse; margin: 9px 0; font-size: 9.2pt; break-inside: avoid; }
+th { background: var(--paper-2); font-weight: 700; text-align: right; }
+th, td { border: 1px solid var(--line-2); padding: 5px 8px; vertical-align: top; }
+td.num { text-align: center; white-space: nowrap; }
+tr:nth-child(even) td { background: #fcfbf7; }
+
+/* ── چک‌لیست و قدم‌ها ─────────────────────────────── */
+.check { list-style: none; padding-inline-start: 0; }
+.check li { padding-inline-start: 26px; position: relative; margin: 5px 0; }
+.check li::before { content: ""; position: absolute; inset-inline-start: 2px; top: 8px;
+  width: 11px; height: 11px; border: 1.6px solid var(--ink-2); border-radius: 3px; background: #fff; }
+.steps { counter-reset: s; list-style: none; padding-inline-start: 0; }
+.steps > li { counter-increment: s; position: relative; padding-inline-start: 30px; margin: 8px 0; break-inside: avoid; }
+.steps > li::before { content: counter(s); position: absolute; inset-inline-start: 0; top: 2px;
+  width: 21px; height: 21px; border-radius: 50%; background: var(--ink); color: #fff;
+  font-size: 9pt; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.click { background: #f0f0ee; border: 1px solid var(--line-2); border-bottom-width: 2px;
+  border-radius: 5px; padding: 0 6px; font-size: 9pt; font-weight: 600; white-space: nowrap; }
+.pagebreak { break-before: page; }
+hr { border: 0; border-top: 1px solid var(--line); margin: 16px 0; }
+.kv { display: grid; grid-template-columns: 128px 1fr; gap: 3px 10px; font-size: 9.3pt; }
+.kv b { color: var(--ink-2); }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <p class="brand">نوبتین — راهنمای انتشار روی گیت‌هاب</p>
+  <p class="sub">مرحله‌به‌مرحله، برای کسی که تا حالا مخزن نکرده است. از ساخت حساب تا لینکی که کارفرما باز می‌کند و نظر می‌دهد.</p>
+  <p>
+    <span class="tag">۱۰ بخش</span>
+    <span class="tag">حدود ۴۰ تا ۶۰ دقیقه</span>
+    <span class="tag">نسخهٔ ۱.۰</span>
+    <span class="tag">۱۱ آبان ۱۴۰۵</span>
+  </p>
+  <div class="meta">
+    <div><b>۹۷</b><span>فایل آمادهٔ انتشار (بدون دیتابیس و کش)</span></div>
+    <div><b>۳٫۳ مگابایت</b><span>حجم کل، که ۱٫۹ مگ آن اسکرین‌شات است</span></div>
+    <div><b>۳۵ بخش</b><span>آزمون پایان‌به‌پایان + ۳ شغل CI</span></div>
+    <div><b>۰</b><span>رمز، شمارهٔ واقعی یا دیتابیس در مخزن</span></div>
+  </div>
+</div>
+
+<h2 style="margin-top:18px">این راهنما چه چیزی را پوشش می‌دهد</h2>
+<ol>
+  <li>حساب گیت‌هاب و تأیید دومرحله‌ای (۲FA)</li>
+  <li>ساخت مخزن (Repository) به نام <code>nobatin</code></li>
+  <li>ساخت کلید دسترسی (Token) — فقط برای فرستادن فایل‌ها</li>
+  <li>اجرای دستورهای <code>git</code> روی همین ماشین (یا راه گرافیکی با GitHub Desktop)</li>
+  <li>فرستادن فایل‌ها (push) و وارد شدن به مخزن</li>
+  <li>راستی‌آزمایی: چه چیزی باید دیده شود و چه چیزی <strong>نباید</strong> دیده شود</li>
+  <li>چراغ سبزِ تست‌های خودکار (Actions)</li>
+  <li>دعوت کارفرما و روش‌های نظر دادن</li>
+  <li>آپدیت بعدی، خطاهای رایج و چک‌لیست امنیتی</li>
+</ol>
+
+<div class="box tip">
+  <span class="t">سه اصطلاح، به زبان ساده</span>
+  <b>مخزن (Repository):</b> یک پوشهٔ اشتراکی روی اینترنت که هر نسخهٔ فایل‌ها را نگه می‌دارد؛ مثل یک بایگانی نسخه‌بندی‌شده که هر کسی با لینک می‌تواند ببیند.<br>
+  <b>push:</b> فرستادن کپی نهایی پوشهٔ خودت به آن بایگانی. تا push نکنی، هیچ‌کس چیزی نمی‌بیند.<br>
+  <b>Token (کلید دسترسی):</b> رمزِ موقت مخصوص همین کار و همین دستگاه — به‌جای رمز اصلی حساب. اگر گم شد، با یک کلیک باطل می‌شود و رمز اصلی حساب دست‌نخورده می‌ماند.
+</div>
+
+<div class="box warn">
+  <span class="t">کاری که من (Qoder) قبلاً انجام داده‌ام و کاری که فقط تو می‌توانی بکنی</span>
+  <b>آماده است:</b> README با اسکرین‌شات‌های واقعی، <code>LICENSE</code> (مالکیت خصوصی، فقط بازبینی)،
+  <code>CONTRIBUTING.md</code>، <code>SECURITY.md</code>، <code>CHANGELOG.md</code>،
+  <code>docs/ARCHITECTURE.md</code>، قالب‌های Issue و PR، فایل Workflow تست خودکار،
+  <code>.gitignore</code> و <code>.gitattributes</code>. همه روی همین ماشین، در
+  <span class="path">Desktop\nobat</span> (روی دسکتاپ همین ماشین).<br>
+  <b>فقط تو:</b> ساخت حساب گیت‌هاب، ساخت مخزن، Token، زدن رمز، و دعوت کارفرما. هیچ‌کدام از اینها را نمی‌توانم از طرف تو انجام بدهم — چون به ایمیل و گوشی خودت نیاز دارند.
+</div>
+
+<h1><span class="no">۱.</span> پیش‌نیازها — قبل از هر کلیک</h1>
+
+<ul class="check">
+  <li>یک <strong>ایمیل فعال</strong> که می‌توانی همین حالا باز کنی (برای تأیید گیت‌هاب).</li>
+  <li>یک <strong>اپلیکیشن تأیید دومرحله‌ای</strong> روی گوشی: Google Authenticator، Microsoft Authenticator یا Aegis. (پیامک هم کار می‌کند ولی ضعیف‌تر است و هزینه دارد.)</li>
+  <li>مرورگر <strong>Chrome</strong> (روی این ماشین هست) و اینترنت پایدار.</li>
+  <li><strong>Git</strong> نصب است — نسخهٔ <code>2.55.0.windows.3</code>؛ چک کردیم.</li>
+  <li><strong>Python</strong> روی PATH هست.</li>
+  <li>گیت‌هاب CLI (<code>gh</code>) <strong>نصب نیست</strong>. اشکالی ندارد — مرحلهٔ ۴ هم با خط فرمان و هم با راه گرافیکی توضیح داده شده.</li>
+</ul>
+
+<div class="box note">
+  <span class="t">چرا «تأیید دومرحله‌ای» لازم است؟</span>
+  گیت‌هاب از ۲۰۲۳ برای همهٔ حساب‌ها ۲FA را اجباری کرده. بدون آن، موقع ساخت مخزن یا Token گیر می‌کنی و پیام «Two-factor authentication is required» می‌بینی. پس مرحلهٔ ۲ را رد نکن.
+</div>
+
+<h1><span class="no">۲.</span> حساب گیت‌هاب + تأیید دومرحله‌ای</h1>
+
+<h2>۲-الف) ساخت حساب (اگر نداری)</h2>
+<ol class="steps">
+  <li>در Chrome به نشانی <span class="path">github.com</span> برو. بالا-راست روی <span class="click">Sign up</span>.</li>
+  <li>ایمیل را بنویس → <span class="click">Continue</span> → یک رمز قوی (حداقل ۱۵ کاراکتر) → <span class="click">Continue</span> → نام‌کاربری (username) انتخاب کن. <strong>این نام در همهٔ لینک‌ها دیده می‌شود</strong>، پس رسمی انتخاب کن؛ مثلاً <code>ali-rezaei</code>. فارسی و فاصله مجاز نیست.</li>
+  <li>تیک «I'm not a robot» → <span class="click">Create account</span> → به ایمیلت یک کد ۶ رقمی می‌آید؛ آن را وارد کن (<span class="click">Verify</span>).</li>
+</ol>
+
+<h2>۲-ب) روشن کردن ۲FA (اگر حساب داری و خاموش است)</h2>
+<ol class="steps">
+  <li>نشانی کوتاه: <span class="path">github.com/settings/security</span> را باز کن. (یا: آواتار بالا-راست ← <span class="click">Settings</span> ← منوی چپ <span class="click">Password and authentication</span>.)</li>
+  <li>در بخش <strong>Two-factor authentication</strong> روی <span class="click">Set up</span> یا <span class="click">Enable two-factor authentication</span> کلیک کن. اگر رمز حسابت را خواست، همان رمز ورود را بزن.</li>
+  <li>گزینه <span class="click">Use authentication app</span> (اپلیکیشن تأیید) را انتخاب کن — نه SMS.</li>
+  <li>یک <strong>QR code</strong> نشان می‌دهد. در گوشی: اپ Authenticator را باز کن ← <span class="click">Add account</span> / علامت «+» ← <span class="click">Scan a QR code</span> ← دوربین را مقابل مانیتور بگیر. اگر دوربین نداشتی، متن زیر QR (<code>Secret key</code>) را دستی وارد کن.</li>
+  <li>کد ۶ رقمی که اپ نشان می‌دهد را در صفحهٔ گیت‌هاب بنویس (هر ۳۰ ثانیه عوض می‌شود) ← <span class="click">Verify</span>.</li>
+  <li>صفحه‌ای با <strong>۱۶ کد بازیابی (Recovery codes)</strong> می‌آید. روی <span class="click">Download or copy them</span> بزن و در یک جای امن بگذار (فایل در پوشهٔ Documents، یا چاپ روی کاغذ). <strong>این تنها راهی است اگر گوشی را گم کنی.</strong></li>
+</ol>
+
+<div class="box danger">
+  <span class="t">هشدار</span>
+  کدهای بازیابی و Token را <strong>هرگز</strong> داخل پوشهٔ پروژه (<span class="path">Desktop\nobat</span>) ذخیره نکن — همان پوشه‌ای که قرار است روی گیت‌هاب برود. آنها را بیرون از این پوشه بگذار: پوشهٔ <span class="path">Documents</span> خودت، یا Password Manager مرورگر.
+</div>
+
+<h1><span class="no">۳.</span> ساخت مخزن به نام <code>nobatin</code></h1>
+
+<ol class="steps">
+  <li>به نشانی <span class="path">github.com/new</span> برو. (یا: علامت «+» بالا-راست ← <span class="click">New repository</span>.)</li>
+  <li><strong>Owner:</strong> همان نام‌کاربری خودت. اگر عضو سازمان/گروهی، در این مرحله <em>حساب شخصی</em> خودت را انتخاب کن — نه نام سازمان.</li>
+  <li><strong>Repository name:</strong> دقیقاً بنویس <code>nobatin</code> — کوچک، بدون فاصله، بدون فارسی. اگر زیرش قرمز نوشت <em>“name already exists”</em>، چیزی مثل <code>nobatin-app</code> یا <code>nobatin-v1</code> بزن.</li>
+  <li><strong>Description:</strong> این یک خط را کپی کن:
+    <pre>نوبتین — سامانهٔ نوبت‌دهی آنلاین (Flask + SQLite + Jinja). نسخهٔ بازبینی ۱.۰.</pre>
+  </li>
+  <li><strong>Visibility:</strong> دو دکمه رادیویی دارد.
+    <table>
+      <tr><th style="width:90px">گزینه</th><th>یعنی چه</th><th>برای ما</th></tr>
+      <tr><td><code>Public</code></td><td>هر کسی در اینترنت لینک را باز کند و کد را ببیند. کارفرما بدون هیچ کاری می‌بیند.</td><td class="num">توصیهٔ تو</td></tr>
+      <tr><td><code>Private</code></td><td>فقط تو و کسایی که دعوت کرده‌ای. کارفرما باید «Collaborator» شود.</td><td class="num">اگر حساس است</td></tr>
+    </table>
+    <span class="small">تصور ساده: Public یعنی ویترین مغازه؛ Private یعنی دفتر پشت مغازه. چون <code>LICENSE</code> این مخزن «مالکیت خصوصی، فقط بازبینی» است، Public بودن به کسی حق استفادهٔ تجاری نمی‌دهد — ولی کد قابل دیدن است.</span>
+  </li>
+  <li><strong>Initialize this repository with a README</strong> → <span class="click">تیک را بردار</span>. این مهم‌ترین قدم است: اگر تیک داشته باشد، گیت‌هاب یک README خالی می‌سازد و push اولِ تو با خطا رد می‌شود (خطای شمارهٔ ۳ در بخش ۹). <strong>README واقعی را خودمان داریم.</strong></li>
+  <li><strong>Add .gitignore:</strong> منو را روی <code>No .gitignore</code> بگذار (ما خودمان <code>.gitignore</code> داریم). <strong>Add license:</strong> روی <code>No license</code> (فایل <code>LICENSE</code> اختصاصی خودمان را داریم).</li>
+  <li>پایین صفحه <span class="click">Create repository</span>.</li>
+</ol>
+
+<p>حالا یک صفحهٔ سفید با تیتر <em>Quick setup — if you’ve done this kind of thing before</em> و نشانی
+<code>https://github.com/&lt;نام‌کاربری&gt;/nobatin.git</code> می‌بینی. <strong>این یعنی مخزن خالی آماده است.</strong>
+آن نشانی را برای مرحلهٔ ۵ کپی کن.</p>
+
+<h1 class="pagebreak"><span class="no">۴.</span> ساخت Token (کلید فرستادن فایل)</h1>
+
+<p>گیت‌هاب از مه ۲۰۲۱ دیگر با «رمز حساب» اجازهٔ push نمی‌دهد. باید یک Token بگیری.</p>
+
+<ol class="steps">
+  <li>نشانی: <span class="path">github.com/settings/tokens</span> ← <span class="click">Generate new token</span> ← زیرمجموعهٔ <span class="click">Generate new token (classic)</span>. رمز حساب + کد ۲FA را می‌خواهد.</li>
+  <li><strong>Note (نام کلید):</strong> <code>nobatin-push</code> — تا بعداً بدون شک بتوانی باطلش کنی.</li>
+  <li><strong>Expiration:</strong> <code>30 days</code> (پیش‌فرض <code>7 days</code> را عوض کن؛ ۹۰ روز یا No expiry توصیه نمی‌شود).</li>
+  <li><strong>Select scopes:</strong> فقط تیک اول — <code>repo</code> (Create, read ... private repositories). بقیه را نزن.
+    <pre>[x] repo        <span class="c">← فقط همین یکی</span>
+[ ] workflow    [ ] admin:org    [ ] user    [ ] delete_repo    [ ] gist    <span class="c">← بقیه خاموش</span></pre>
+  </li>
+  <li>پایین صفحه <span class="click">Generate token</span> ← یک رشته با <code>ghp_</code> شروع می‌شود. آیکون <span class="click">Copy</span> (کلیپبورد) کنارش را بزن تا کپی شود.</li>
+</ol>
+
+<div class="box warn">
+  <span class="t">Token فقط یک بار نشان داده می‌شود</span>
+  اگر جایش نذاشتی، «Generate token» دوباره بساز و قبلی را <span class="click">Delete</span> کن. Token قابل بازیابی نیست و قابل دیدن دوباره هم نیست.
+</div>
+
+<div class="box note">
+  <span class="t">اگر گزینهٔ «classic» را ندیدی</span>
+  گیت‌هاب دارد <em>Fine-grained tokens</em> را جا می‌اندازد. در آن حالت: <span class="click">Generate new token</span> →
+  <code>Repository access: All repositories</code> → <code>Contents: Read and write</code> → بقیه <code>No access</code> → Generate.
+  خروجی با <code>github_pat_</code> شروع می‌شود و همان‌جور استفاده می‌شود.
+</div>
+
+<h1><span class="no">۵.</span> فرستادن فایل‌ها — دو راه</h1>
+
+<div class="box tip">
+  <span class="t">راه الف را انتخاب کن اگر با صفحهٔ سیاهِ دستورات راحتی؛ راه ب را اگر نه.</span>
+  هیچ‌کدام امنیتی‌تر نیستند. هر دو همان یک مخزن را پر می‌کنند.
+</div>
+
+<h2>۵-الف) خط فرمان (Git Bash) — توصیه‌شده برای همین پروژه</h2>
+
+<ol class="steps">
+  <li>در منوی Start تایپ کن <code>Git Bash</code> و باز کن. یک پنجرهٔ سیاه می‌آید. (پاست کردن در این پنجره با <strong>کلیک راست</strong> یا <code>Ctrl+Shift+V</code> است، نه <code>Ctrl+V</code>.)</li>
+  <li>برو داخل پوشهٔ پروژه:
+    <pre>cd ~/Desktop/nobat</pre>
+    <span class="small">در Git Bash علامت <code>~</code> یعنی پوشهٔ خانگیِ ویندوز (درایو C ← پوشهٔ Users ← نام‌کاربریِ تو ← Desktop)، پس این دستور روی هر ماشین دیگری هم کار می‌کند. اگر پوشهٔ پروژه را جای دیگری برده‌ای، مسیر کاملش را بنویس.</span>
+  </li>
+  <li><strong>معرفی خودت</strong> (این نام و ایمیل پای هر کامیت می‌نشیند و در گیت‌هاب قابل دیدن است). پیشنهاد: ایمیلِ حریم‌خصوصیِ گیت‌هاب تا ایمیل واقعی‌ت لو نرود — از <span class="path">github.com/settings/emails</span> خطی که با <code>users.noreply.github.com</code> تمام می‌شود را بردار:
+    <pre><span class="c"># نام و ایمیل خودت را داخل گیومشن‌ها بگذار</span>
+git config --global user.name "Ali Rezaei"
+git config --global user.email "12345678+alirezaei@users.noreply.github.com"
+
+<span class="c"># چک کن درست نشسته:</span>
+git config --global user.name
+git config --global user.email</pre>
+    <span class="small">اگر ترجیح می‌دهی تنظیمات سراسری دست‌نخورده بماند، همین مقادیر را با <code>-c</code> پای خودِ کامیت بگذار؛ بخش «چند کامیت منطقی» پایین همین صفحه.</span>
+  </li>
+  <li><strong>ساخت مخزن محلی</strong> (فقط یک بار، و اگر من قبلاً این کار را نکرده‌ام):
+    <pre>git init</pre>
+  </li>
+  <li><strong>افزودن فایل‌ها</strong> و <span class="click">دیدن قبل از فرستادن</span>:
+    <pre>git add -A
+git status --short | head -30
+git ls-files | wc -l        <span class="c"># باید ۹۷ باشد، نه چند هزار</span></pre>
+  </li>
+  <li><strong>تضمین کن هیچ چیز خصوصی داخلش نیست</strong> — این قدم را رد نکن:
+    <pre>git ls-files | grep -E '(^|/)instance/|(^|/)\.env($|[.-])|\.(db|sqlite|sqlite3|pem|key|log)$' \
+  | grep -vE '(^|/)\.env\.example$' \
+  || echo "پاک است — هیچ فایل خصوصی ردگیری نشده"</pre>
+    خروجیِ درست: <code>پاک است — هیچ فایل خصوصی ردگیری نشده</code>. اگر لیستی چاپ شد، بخش ۹-ح را بخوان و <strong>قبل از push</strong> اصلاح کن.
+    <span class="small">(دقت: <code>.env.example</code> و <code>deploy/nobatin.env.template</code> باید در مخزن باشند؛ الگو فقط فایل‌های واقعیِ <code>.env</code>، دیتابیس‌ها، لاگ‌ها و کلیدها را می‌گیرد — همان کاری که شغل «بهداشت مخزن» در CI می‌کند.)</span>
+  </li>
+  <li><strong>کامیت</strong> (ثبت نسخه):
+    <pre>git commit -m "نوبتین ۱.۰ — سامانهٔ نوبت‌دهی آنلاین (Flask + SQLite)"</pre>
+  </li>
+  <li><strong>وصل کردن به گیت‌هاب و فرستادن</strong> — در نشانی زیر <code>نام‌کاربری</code> را عوض کن:
+    <pre>git branch -M main
+git remote add origin https://github.com/نام‌کاربری/nobatin.git
+git push -u origin main</pre>
+  </li>
+  <li>یک پنجرهٔ «Sign in to GitHub» باز می‌شود (Git Credential Manager). گزینهٔ <span class="click">Sign in with Browser</span> →
+    تب مرورگر → <span class="click">Authorize git-credentials</span>. اگر به‌جای پنجره، در همان صفحهٔ سیاه <code>Username:</code> و
+    <code>Password:</code> خواست: Username = نام‌کاربری گیت‌هاب، <strong>Password = همانهٔ Token (همان <code>ghp_…</code>)</strong> — رمز حساب را نزن، رد می‌شود.
+  </li>
+  <li>چند خط <code>Writing objects: 100%</code> که رد شد، تمام. برو <span class="path">github.com/نام‌کاربری/nobatin</span> و F5 بزن.</li>
+</ol>
+
+<div class="box note">
+  <span class="t">چند کامیت منطقی (به‌جای یک کامیت بزرگ) — همان چیزی که من انجام می‌دهم</span>
+  اگر نام و ایمیل را به من بدهی، من مخزن را <code>init</code> و در ۵ کامیت جدا می‌چینم، <strong>بدون تغییر تنظیمات سراسریِ git</strong>:
+  <pre>git -c user.name="..." -c user.email="..." commit -m "core: schema، jalali، booking، csrf، cache"
+<span class="c">// به همین ترتیب: routes + templates → static → tests/tools → docs + deploy + .github</span></pre>
+  بعد از آن تو فقط <code>git remote add</code> و <code>git push</code> را می‌زنی.
+</div>
+
+<h2>۵-ب) راه گرافیکی: GitHub Desktop (بدون دستور)</h2>
+<ol class="steps">
+  <li>از <span class="path">desktop.github.com</span> نصب کن (حدود ۱۵۰ مگ). موقع نصب حساب گیت‌هاب را با ۲FA وصل می‌کند.</li>
+  <li>منوی بالا: <span class="click">File</span> → <span class="click">Local repository...</span> → <span class="click">Add existing repository</span> → با Browse پوشهٔ <span class="path">Desktop\nobat</span> را انتخاب کن → <span class="click">Add repository</span>. (این کار همان <code>git init</code> محلی است.)</li>
+  <li>ستون چپ لیست فایل‌های تغییریافته را می‌آورد. تیک همه را روشن بگذار → پایین همان ستون در <strong>Summary</strong> بنویس <code>نوبتین ۱.۰</code> → <span class="click">Commit to main</span>.</li>
+  <li>بالا: <span class="click">Publish repository</span> → Repository name: <code>nobatin</code> → اگر می‌خواهی فقط کارفرما ببیند تیک <span class="click">Keep this code private</span> را روشن بگذار → <span class="click">Publish repository</span>.</li>
+  <li>دکمهٔ <span class="click">Push origin</span> (بالا-راست). حالا مخزن پر است.</li>
+</ol>
+<span class="small">نکته: GitHub Desktop فایل‌های نادیده‌گرفته‌شده (<code>instance/</code> و <code>.env</code>) را خودش نشان نمی‌دهد، چون <code>.gitignore</code> را محترم می‌شمارد. اگر لیستش چیزی شبیه <code>.env</code> نشان داد، به بخش ۹-ح برو و push نکن.</span>
+
+<h1 class="pagebreak"><span class="no">۶.</span> راستی‌آزمایی — چه چیزی باید دیده شود</h1>
+
+<h2>۶-الف) در صفحهٔ اصلی مخزن</h2>
+<table>
+  <tr><th style="width:46%">باید دیده شود</th><th>نباید باشد — و معنیش</th></tr>
+  <tr>
+    <td><code>README.md</code> با تصاویر فارسی، بخش‌های ۱ تا ۸ و بنرهای بالا</td>
+    <td><code>instance/nobatin.db</code> — دیتابیس واقعی/تست لو رفته</td>
+  </tr>
+  <tr><td>پوشه‌های <code>core</code>، <code>routes</code>، <code>templates</code>، <code>static</code>، <code>deploy</code>، <code>docs</code>، <code>tools</code>، <code>.github</code></td><td><code>.env</code> — همهٔ رمزها و کلیدها</td></tr>
+  <tr><td><code>LICENSE</code>، <code>CONTRIBUTING.md</code>، <code>SECURITY.md</code>، <code>CHANGELOG.md</code>، <code>.gitignore</code>، <code>.gitattributes</code></td><td><code>__pycache__/</code> و <code>*.log</code> — شلختگی (خطرناک نیست، ولی نشان می‌دهد .gitignore کار نکرده)</td></tr>
+  <tr><td><code>smoke_test.py</code>، <code>requirements.txt</code>، <code>app.py</code>، <code>wsgi.py</code></td><td><code>nobatin_test.db</code> — دیتابیس آزمون</td></tr>
+</table>
+
+<h2>۶-ب) جست‌وجوی داخل مخزن (۳۰ ثانیه، ارزشش را دارد)</h2>
+<p>در صفحهٔ مخزن، کادر جست‌وجوی بالا-چپ را بزن (کلید <span class="click">/</span>)، روی همان مخزن قفل کن و این را تایپ کن تا مطمئن شوی رمز جایی نمانده:</p>
+<pre>NOBATIN_SECRET</pre>
+<p>خروجی درست: فقط <code>.env.example</code> و <code>deploy/nobatin.env.template</code> و <code>README.md</code> — و در اینها مقدار پشت علامت <code>=</code> <strong>خالی</strong> است. اگر رشته‌ای شبیه <code>NOBATIN_SECRET=abc123…</code> دیدی، فوراً بخش ۹-ح.</p>
+
+<h2>۶-پ) تنظیمات نمایش مخزن</h2>
+<ol class="steps">
+  <li>تب <span class="click">Settings</span> (چرخ‌دنده، بالای ستون‌های مخزن — نه Settingsِ حساب).</li>
+  <li>در <strong>General → Features</strong>: تیک <code>Issues</code> <strong>روشن</strong> بماند — جای اصلی نظر کارفرماست. <code>Wiki</code> و <code>Discussions</code> را می‌توانی خاموش کنی تا شلوغ نشود.</li>
+  <li>در همان صفحه <strong>Repository description</strong> و در <strong>Website</strong> اگر سروری داری نشانی‌اش را بنویس (فعلاً خالی بگذار).</li>
+  <li>پایین‌تر: <strong>Default branch</strong> باید <code>main</code> باشد. اگر <code>master</code> است، CI باز هم اجرا می‌شود (هر دو را در فایل workflow گذاشته‌ایم).</li>
+</ol>
+
+<h1><span class="no">۷.</span> تست‌های خودکار: چراغ سبز Actions</h1>
+
+<p>فایل <code>.github/workflows/ci.yml</code> را گذاشته‌ایم. معادل ساده‌اش: «یک ماشین مجازی در اینترنت، هر بار که فایلی می‌فرستی، خودش پروژه را نصب می‌کند و همهٔ آزمون‌ها را اجرا می‌کند و به تو کارتی می‌دهد.»</p>
+
+<ol class="steps">
+  <li>در مخزن، تب بالا <span class="click">Actions</span>.</li>
+  <li>اولین اجرا خودش شروع شده (<em>Workflow runs</em>). نقطهٔ زرد کنارش یعنی «در حال اجرا». معمولاً <strong>۲ تا ۶ دقیقه</strong>.</li>
+  <li>بازنشانی کن (F5). باید سه کارت سبز ببینی:
+    <table>
+      <tr><th>شغل</th><th>چه کاری می‌کند</th><th>زمان تقریبی</th></tr>
+      <tr><td>آزمون‌ها (Python 3.10 … 3.13)</td><td>۴ نسخهٔ پایتون × <code>python smoke_test.py</code> — ۳۵ بخش آزمون</td><td class="num">۲–۴ دقیقه</td></tr>
+      <tr><td>اجرای واقعی production + سرصفحه‌ها</td><td><code>wsgi.py</code> را با حالت production بالا می‌آورد و HSTS/CSP/CSRF/رد شدن هاست جعلی و <code>/healthz</code> را می‌سنجد؛ به‌علاوه دو حالتِ «بالا نیامدن» (بدون رمز و با OTP master)</td><td class="num">۴۰–۹۰ ثانیه</td></tr>
+      <tr><td>بهداشت مخزن</td><td>هیچ <code>.env</code>/دیتابیس/لاگ ردگیری نشده؛ هیچ مسیر شخصیِ ماشین توسعه (درایو C و پوشهٔ Users) در فایل‌ها نیست؛ هیچ <code>&lt;script&gt;</code> درون‌خطی نیست؛ CDN نیست</td><td class="num">۱۵–۳۰ ثانیه</td></tr>
+    </table>
+  </li>
+  <li>روی نام اجرا کلیک کن → روی هر شغل → <span class="click">Summary</span> / <span class="click">Set up job</span> برای دیدن لاگ کامل. اگر قرمز شد: لاگ آن «step» قرمز را کپی کن (بخش ۹-د).</li>
+  <li><strong>چک نهایی برای کارفرما:</strong> در صفحهٔ اصلی مخزن، کنار آخرین کامیت باید نشانهٔ سبز «passing» باشد. اگر نیست، یعنی تست‌ها رد شده‌اند و کارفرما همان را می‌بیند.</li>
+</ol>
+
+<div class="box tip">
+  <span class="t">اختیاری: افزودن نشان (badge) وضعیت تست به README</span>
+  بعد از ساخت مخزن، این خط را <strong>بعد از</strong> بنرهای موجودِ README اضافه کن و <code>OWNER</code> را با نام‌کاربری خودت عوض کن — اگر عوض نکنی نشان «invalid» می‌شود:
+  <pre>[![CI](https://github.com/OWNER/nobatin/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/nobatin/actions/workflows/ci.yml)</pre>
+</div>
+
+<h1 class="pagebreak"><span class="no">۸.</span> دعوت کارفرما و گرفتن نظر</h1>
+
+<h2>۸-الف) اگر مخزن Public است</h2>
+<p>کارفرما اصلاً نیاز به دعوت ندارد: لینک را بده، تمام.</p>
+<pre>https://github.com/نام‌کاربری/nobatin</pre>
+<p><strong>برای نظر روی خط مشخص کد</strong> نیاز به حساب گیت‌هاب دارد (بدون حساب فقط می‌تواند ببیند). اگر حساب ندارد، مخزن را Private کن و او را دعوت کن (۸-ب).</p>
+
+<h2>۸-ب) دعوت رسمی (Collaborator) — لازم برای مخزن Private، و برای Write دادن</h2>
+<ol class="steps">
+  <li>مخزن → <span class="click">Settings</span> → منوی چپ (زیر <em>Access</em>) → <span class="click">Collaborators and teams</span> → <span class="click">Add people</span>.</li>
+  <li>نام‌کاربری یا ایمیل کارفرما را تایپ کن، از لیست انتخابش کن → <span class="click">Add to repository</span>.</li>
+  <li>سطح دسترسی: برای «فقط ببیند و نظر بدهد» <code>Read</code> کافی است. اگر می‌خواهد خودش شاخه بسازد و PR بفرستد <code>Triage</code> یا <code>Write</code>. <strong>Admin نده</strong> — با Admin می‌تواند مخزن را پاک کند.</li>
+  <li>برای او ایمیل دعوت می‌رود؛ وقتی <span class="click">Accept invitation</span> زد در لیست می‌آید.</li>
+</ol>
+
+<h2>۸-پ) چهار راهی که کارفرما می‌تواند نظر بدهد</h2>
+<table>
+  <tr><th style="width:23%">روش</th><th>مسیر کلیک</th><th>کِی استفاده کند</th></tr>
+  <tr>
+    <td><strong>۱. Issue (ایراد / درخواست)</strong></td>
+    <td>تب <span class="click">Issues</span> → <span class="click">New issue</span> → یکی از دو قالب آماده: «گزارش ایراد» یا «درخواست قابلیت» — یا «New issue» سفید (allow empty issues را روشن گذاشته‌ایم)</td>
+    <td>برای ۹۰٪ نظرها. قالب‌ها خودش می‌پرسند: چه شد، مراحلی که زدی، محیط، پایتون/Flask، لاگ. لاگ را <strong>بدون</strong> شمارهٔ موبایل و رمز بفرستد.</td>
+  </tr>
+  <tr>
+    <td><strong>۲. کامنت روی یک خط کد</strong></td>
+    <td>فایل را باز کن (مثلاً <code>core/booking.py</code>) → روی <strong>شمارهٔ خط</strong> سمت چپ کلیک کن → دکمهٔ <span class="click">…</span> که ظاهر می‌شود → <span class="click">Comment</span> → بنویس → <span class="click">Update comment</span></td>
+    <td>«اینجا قفل ساعت را درست ندیده‌ام» — دقیق‌ترین نوع بازبینی.</td>
+  </tr>
+  <tr>
+    <td><strong>۳. Review روی Pull Request</strong></td>
+    <td>تب <span class="click">Pull requests</span> → یک PR → <span class="click">Files changed</span> → <span class="click">Create review</span> → <code>Comment</code> / <code>Approve</code> / <code>Request changes</code></td>
+    <td>وقتی خودش تغییری فرستاد و تو خواستی او تأیید کند.</td>
+  </tr>
+  <tr>
+    <td><strong>۴. گفت‌وگوی ساده</strong></td>
+    <td>همان Issue با Markdown: برای کد سه تا backtick، برای تیک‌زدنی <code>- [ ]</code></td>
+    <td>لیست چک نهایی: یک Issue به نام «بازبینی نسخهٔ ۱.۰» بساز، لینک <code>README</code>، <code>docs/ARCHITECTURE.md</code>، <code>deploy/README.md</code> را داخلش بده و از کارفرما بخواه تیک بزند.</td>
+  </tr>
+</table>
+
+<div class="box note">
+  <span class="t">یک Issueِ «درِ ورود» بساز — تا کارفرما گم نشود</span>
+  <ol class="steps" style="margin-top:6px">
+    <li>تب <span class="click">Issues</span> → <span class="click">New issue</span> → <span class="click">Blank issue</span>.</li>
+    <li>عنوان: <code>بازبینی نوبتین ۱.۰ — شروع از اینجا</code></li>
+    <li>متن (کپی کن):
+<pre>این مخزن نسخهٔ بازبینی نوبتین ۱.۰ است.
+
+پیشنهاد من برای ترتیب دیدن:
+1. README.md — معرفی، اسکرین‌شات‌ها، «پیاده‌شده ↔ عمداً شبیه‌سازی‌شده»
+2. docs/ARCHITECTURE.md — چهار دیاگرام (نمای کلی، لایهٔ WSGI، توالی رزرو/پرداخت، موجودیت‌ها)
+3. تب Actions — سه شغل سبز = ۳۵ بخش آزمون روی پایتون ۳.۱۰ تا ۳.۱۳
+4. deploy/README.md — اگر بخواهیم روی سرور ببریم
+5. smoke_test.py — خودِ آزمون‌ها
+
+درگاه بانکی و سرویس پیامک عمداً شبیه‌سازی‌اند (بخش ۳-ب README).
+نظرت را همین‌جا یا روی خط کدها بنویس.</pre>
+    </li>
+    <li><span class="click">Submit new issue</span> ← لینکش را برای کارفرما بفرست (آیکون «Copy link» در کامنت‌ها، یا نشانی نوار مرورگر).</li>
+  </ol>
+</div>
+
+<h1><span class="no">۹.</span> بعد از نظرها: آپدیت، و رفع خطاها</h1>
+
+<h2>۹-الف) فرستادن تغییرات بعدی (هر تعداد که باشد)</h2>
+<pre>cd ~/Desktop/nobat
+git status                       <span class="c"># چه چیزی عوض شده؟</span>
+python smoke_test.py             <span class="c"># قبل از فرستادن، آزمون محلی</span>
+git add -A
+git commit -m "رفع نظر کارفرما: پیش‌نمایش بازپرداخت در لغو"
+git push</pre>
+<p>هر push = یک اجرای جدید Actions. اگر کارفرما روی موبایل باشد، نتیجهٔ سبز/قرمز را همان‌جا در Issue می‌بیند.</p>
+
+<h2>۹-ب) اگر کارفرما خودش changes فرستاد (PR از Fork)</h2>
+<pre>git fetch origin pull/7/head:review-7
+git checkout review-7
+python smoke_test.py
+<span class="c"># اگر خوب بود برگرد: </span>
+git checkout main
+git merge review-7
+git push</pre>
+<span class="small">عدد ۷ شمارهٔ PR است و در آدرس صفحهٔ PR نوشته شده. اگر <code>gh</code> نصب کنی، همان‌ها یک دستور می‌شود: <code>gh pr checkout 7</code>.</span>
+
+<h2>۹-پ) هشت خطای رایج — پیام واقعی و راه‌حل</h2>
+<table>
+  <tr><th style="width:28%">چیزی که می‌بینی</th><th style="width:24%">چرا</th><th>راه‌حل</th></tr>
+  <tr>
+    <td><code>remote: Support for password authentication was removed</code> و <code>Authentication failed</code></td>
+    <td>جای Token، رمز حساب را زده‌ای</td>
+    <td>Username = نام‌کاربری، Password = همان <code>ghp_…</code>. اگر قبلاً اشتباه ذخیره شده: Control Panel → <em>Credential Manager</em> → Windows Credentials → <code>git:https://github.com</code> → Remove → دوباره push.</td>
+  </tr>
+  <tr>
+    <td><code>403 Forbidden</code> / <code>Permission denied</code> / <code>Invalid token</code></td>
+    <td>Token scope ندارد (<code>repo</code> تیک نبود) یا منقضی شده یا با نام کاربری اشتباه فرستادی</td>
+    <td>در <span class="path">github.com/settings/tokens</span> ببین منقضی نشده باشد؛ Token تازه با scope <code>repo</code> بساز؛ مخزن متعلق به آن حساب است؟</td>
+  </tr>
+  <tr>
+    <td><code>! [rejected] main -&gt; main (fetch first)</code> یا «the remote contains work you do not have locally»</td>
+    <td>موقع ساخت مخزن تیک «Add a README» روشن مانده بود؛ مخزن پس از سمت گیت‌هاب یک کامیت اولیه دارد و تاریخچه‌های محلی و ریموت به هم نمی‌خورند</td>
+    <td><strong>راه معمولی:</strong> <code>git pull --rebase origin main</code> ← اگر وسط کار روی <code>README.md</code> اختلاف آمد، نسخهٔ خودت را نگه‌دار: <code>git checkout --ours README.md && git add README.md && git rebase --continue</code> ← بعد <code>git push -u origin main</code>.<br><strong>راه پاک (مخزن هنوز خالی است و داده‌ای از دست نمی‌رود):</strong> در مخزن <span class="click">Settings</span> → پایین‌ترین بخش قرمز <span class="click">Delete this repository</span> → دوباره بساز و مطمئن شو تیک README <strong>خاموش</strong> است.</td>
+  </tr>
+  <tr>
+    <td><code>fatal: unable to auto-detect email address</code> / «Please tell me who you are»</td>
+    <td>قدم ۳ از ۵-الف (معرفی نام و ایمیل) را نزدی</td>
+    <td>همان دو خط <code>git config --global …</code> را بزن و دوباره <code>git commit</code>.</td>
+  </tr>
+  <tr>
+    <td>push خیلی کند است یا <code>RPC failed; curl 56</code></td>
+    <td>معمولاً یک فایل بزرگ ناخواسته (دیتابیس/لاگ) رفته داخل کامیت</td>
+    <td><code>git ls-files | wc -l</code> (باید ۹۷) و <code>du -sh .git</code> چک شود. اگر بزرگ بود: فایل را از index در بیاور (۹-ح) و کامیت‌ها را از اول بساز.</td>
+  </tr>
+  <tr>
+    <td>Actions قرمز در شغل «آزمون‌ها»</td>
+    <td>نسخهٔ پایتون، یا خطای واقعی در تست</td>
+    <td>روی شغل قرمز ← step قرمز ← لاگ. اگر <code>RuntimeError: production …</code> بود یعنی یکی از گاردهای fail-closed فعال شده — که خودش خبر خوب است؛ لاگ را در یک Issue بگذار و برایم بفرست.</td>
+  </tr>
+  <tr>
+    <td>Actions قرمز در «بهداشت مخزن» با لیست فایل</td>
+    <td>یک فایل خصوصی یا مسیر شخصیِ ماشین توسعه وارد مخزن شده</td>
+    <td>۹-ح — قبل از آن، لینک مخزن را برای کسی نفرست.</td>
+  </tr>
+  <tr>
+    <td>فارسی‌ها در صفحهٔ گیت‌هاب به‌هم‌ریخته یا «؟» است</td>
+    <td>فایل با encoding اشتباه ذخیره شده</td>
+    <td>همهٔ فایل‌های این پروژه UTF-8 و با <code>.gitattributes</code> خط‌پایان LF هستند. اگر در ویرایشگر خودت فایل را دوباره ذخیره کردی، UTF-8 را انتخاب کن.</td>
+  </tr>
+</table>
+
+<h2 id="h">۹-ح) اگر فایل خصوصی (مثل <code>.env</code> یا <code>*.db</code>) رفت داخل مخزن</h2>
+<p>ترتیب درست، به همین سرعت:</p>
+<ol class="steps">
+  <li><strong>اگر رمز واقعی داخلش بود، اول باطلش کن.</strong> Token را در <span class="path">github.com/settings/tokens</span> با <span class="click">Delete</span> پاک کن، <code>NOBATIN_SECRET</code> را با یک رشتهٔ تازه عوض کن، کلید پیامک را در پنل سرویس‌دهنده rotate کن. رازِ لو‌رفته روی مخزن Public <strong>چند ثانیه</strong> بعد توسط ربات‌ها پیدا می‌شود؛ حذف فایل، رمز را بی‌اثر نمی‌کند.</li>
+  <li>فایل را از مخزن دربیاور ولی از دیسک پاک نکن:
+<pre>git rm --cached .env          <span class="c"># یا instance/nobatin.db</span>
+echo ".env" &gt;&gt; .gitignore     <span class="c"># اگر خطش نبود</span>
+git add .gitignore
+git commit -m "حذف فایل خصوصی از مخزن + تکمیل .gitignore"
+git push</pre>
+  </li>
+  <li><strong>تاریخچه هنوز فایل را دارد.</strong> اگر واقعاً رازی در تاریخچه بوده: <span class="path">github.com/contact</span> → «Delete commit history» درخواست بده، یا مخزن را پاک کن و دوباره بساز (این راهنما را از اول اجرا کن). ساده‌تر و مطمئن‌تر: قبل از push اول، چکِ قدم ۶ از ۵-الف را جدی بگیر.</li>
+  <li>راستی‌آزمایی نهایی (دقیقاً همان چیزی که CI هم می‌سنجد):
+<pre>git ls-files | grep -E '(^|/)instance/|(^|/)\.env($|[.-])|\.(db|sqlite|sqlite3|pem|key|log)$' \
+  | grep -vE '(^|/)\.env\.example$' \
+  || echo "پاک است"</pre>
+  </li>
+</ol>
+
+<h1 class="pagebreak"><span class="no">۱۰.</span> چک‌لیست «آماده برای کارفرما»</h1>
+<ul class="check">
+  <li>۲FA روی حساب روشن است و کدهای بازیابی جای دیگری ذخیره شده‌اند.</li>
+  <li>Token فقط scope <code>repo</code> دارد، تاریخ انقضا (۳۰ روز) دارد و نامش <code>nobatin-push</code> است.</li>
+  <li><code>git ls-files | wc -l</code> = ۹۷ و خروجیِ چکِ فایل‌های خصوصی «پاک است» می‌نویسد.</li>
+  <li>در صفحهٔ مخزن نه <code>instance/</code> هست، نه <code>.env</code>، نه <code>__pycache__</code>، نه <code>*.db</code>.</li>
+  <li>جست‌وجوی <code>NOBATIN_SECRET</code> در مخزن فقط مقدار <strong>خالی</strong> در <code>.env.example</code> و <code>deploy/nobatin.env.template</code> را نشان می‌دهد.</li>
+  <li>تب Actions سه شغل سبز دارد و کنار آخرین کامیت نشان «passing» سبز است.</li>
+  <li>README: بخش «پیاده‌شده ↔ عمداً شبیه‌سازی‌شده» (درگاه <code>sandbox</code>، پیامک <code>log</code>) و «چیزی که خواسته شده بود ↔ جایی که پیاده شده» هر دو دیده می‌شوند.</li>
+  <li><code>LICENSE</code> در صفحهٔ مخزن «Other / proprietary» است — نه MIT/Apache. یعنی بازبینی آزاد، استفاده و استقرار نه.</li>
+  <li>دادهٔ نمونه فقط شماره‌های ساختگی است (<code>09120000000</code> و همسان‌ها) و شمارهٔ واقعی هیچ‌کس در seed نیست.</li>
+  <li>یک Issue «بازبینی نسخهٔ ۱.۰ — شروع از اینجا» ساخته شده و لینکش برای کارفرما رفته.</li>
+  <li>برای مخزن Private: دعوت Accept شده و سطحش <code>Read</code>/<code>Triage</code> است (<code>Admin</code> نه).</li>
+</ul>
+
+<h2>۱۰-ب) سه چیزی که کارفرما سؤال می‌کند — جواب حاضر</h2>
+<table>
+  <tr><th style="width:34%">سؤال</th><th>جواب کوتاه</th></tr>
+  <tr><td>«چرا درگاه پول نمی‌گیرد؟»</td><td>عمداً. <code>core/gateway.py</code> صفحهٔ شبیه‌سازی است؛ برای درگاه واقعی فقط همان یک فایل و صفحهٔ بازگشت عوض می‌شوند. جدول تراکنش‌ها، وضعیت‌ها و قاعدهٔ «پرداخت ناموفق = نوبت قطعی نه» دست‌نخورده می‌ماند. (README بخش ۳-ب و ۶)</td></tr>
+  <tr><td>«چرا پیامک نمی‌آید؟»</td><td>پیش‌فرض فرستندهٔ <code>log</code> است تا شماره و هزینه خرج نشود؛ همه در جدول <code>sms_log</code> و در صندوق /sms-box خوانده می‌شوند. برای کاوه‌نگار سه متغیر محیطی کافی است. (README بخش ۴)</td></tr>
+  <tr><td>«چند کاربر هم‌زمان تحمل می‌کند؟»</td><td>روی همین ماشینِ توسعه: ~۱۴۰–۱۶۵ درخواست بر ثانیه برای صفحه‌های عمومی و ~۹۰–۹۸ برای پنل واردشده، بدون ۵xx. یک ساعت را دو نفر هم‌زمان نمی‌توانند بگیرند (قفل تراکنشی + ایندکس یکتای مشروط — شغل ۳۳ آزمون). (README بخش ۲-ب)</td></tr>
+</table>
+
+<hr>
+<p class="small">
+  این فایل (<code>docs/github-guide.html</code>) و خروجی PDFاش در مخزن است. تاریخ تهیه: ۱۱ آبان ۱۴۰۵ (۲ نوامبر ۲۰۲۶).
+  عددها روی ماشینِ توسعه با Git for Windows 2.55.0 و Python 3.14 اندازه‌گیری/چک شده‌اند؛ نام منوها بر پایهٔ رابط انگلیسیِ گیت‌هاب نوشته شده و اگر گیت‌هاب چیزی را جابه‌جا کرد، نشانی‌های مستقیمِ داخل راهنما (مثل <code>github.com/new</code> و <code>github.com/settings/tokens</code>) کار می‌کنند.
+  نوبتین نسخهٔ ۱.۰ — مالکیت خصوصی، فقط برای بازبینی.
+</p>
+
+</body>
+</html>

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% from "macros/ui.html" import ic, empty, status_badge %}
+{% block title %}صندوق پیامک‌ها{% endblock %}
+{% block content %}
+<div class="section" style="margin-top:22px">
+  <div class="row-between">
+    <div><span class="eyebrow">{{ ic('chat', 13) }} صندوق پیامک</span>
+      <h1>{{ 'همهٔ پیامک‌های ارسالی' if is_admin else 'پیامک‌های شمارهٔ شما' }}</h1>
+      <p class="small muted">تا سامانهٔ پیامک واقعی وصل شود، هر پیامک اینجا ثبت و قابل پیگیری می‌ماند.
+        {% if note %}{{ note }}{% endif %}</p></div>
+    <a class="btn btn-ghost" href="{{ url_for('admin.panel') if is_admin else url_for('customer.panel') }}">
+      بازگشت</a>
+  </div>
+  {% if rows %}
+  <div class="stack">
+    {% for s in rows %}
+    <div class="card" style="padding:14px">
+      <div class="row-between"><span class="badge ink num">{{ s.mobile }}</span>
+        <span class="tiny muted">{{ s.created_at|jdatetime }}</span></div>
+      <p style="margin:8px 0">{{ s.body }}</p>
+      <div class="row" style="gap:6px"><span class="badge sky">{{ s.template }}</span>
+        {{ status_badge(s.status) }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+    {{ empty('پیامکی ارسال نشده است.', 'chat', 'با گرفتن یک نوبت، پیامک تأیید اینجا دیده می‌شود.') }}
+  {% endif %}
+</div>
+{% endblock %}

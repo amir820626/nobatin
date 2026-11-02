@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% from "macros/ui.html" import ic %}
+{% block title %}ورود به نوبتین{% endblock %}
+{% block content %}
+<div class="section" style="max-width:460px;margin:34px auto">
+  <div class="card" style="box-shadow:var(--shadow-m)">
+    <div class="center" style="margin-bottom:14px">
+      <svg width="52" height="52" viewBox="0 0 40 40" style="margin-bottom:6px"><use href="{{ url_for('static', filename='img/sprite.svg') }}#i-logo"></use></svg>
+      <h1 style="font-size:1.5rem">به نوبتین خوش آمدید</h1>
+      <p class="small muted">رمز عبور لازم نیست. فقط شمارهٔ موبایل، و یک کد یک‌بارمصرف.</p>
+    </div>
+    <form method="post" action="{{ url_for('auth.send_otp') }}">
+    {{ csrf() }}
+      <input type="hidden" name="next" value="{{ next }}">
+      <div class="field">
+        <label for="mobile">شمارهٔ موبایل</label>
+        <input class="input input-rtl-num num" id="mobile" name="mobile" value="{{ mobile }}"
+               placeholder="۰۹۱۲۳۴۵۶۷۸۹" inputmode="numeric" autocomplete="tel" maxlength="11" required autofocus>
+        <span class="hint">۱۱ رقم و با ۰۹ شروع شود.</span>
+      </div>
+      <button class="btn btn-block btn-lg" type="submit">{{ ic('bolt', 18) }} ارسال کد تأیید</button>
+    </form>
+    <hr class="thin">
+    <p class="tiny muted center">با ورود، <a class="link" href="{{ url_for('public.terms') }}">قوانین نوبتین</a> را می‌پذیرید.
+      پرداخت ناموفق هیچ نوبتی ایجاد نمی‌کند.</p>
+  </div>
+  {% if config.get('SEED_DEMO') %}
+  {# این بلک شمارهٔ حساب مدیر را چاپ می‌کند؛ فقط وقتی نشان داده می‌شود که حساب‌های
+     نمونه واقعاً ساخته شده باشند (NOBATIN_SEED=1 یا حالت توسعه). در سرور واقعی که
+     seed خاموش است، چاپش یعنی هدیه دادنِ شمارهٔ مدیر به هر مهاجم. #}
+  <div class="card card-flat" style="margin-top:14px">
+    <h3 style="font-size:.92rem">{{ ic('shield', 15) }} حساب‌های نمونهٔ این نسخه</h3>
+    <div class="grid g-3 small" style="gap:6px">
+      <div>مشتری <a class="link num" href="{{ url_for('auth.login', mobile='09301234567') }}">۰۹۳۰۱۲۳۴۵۶۷</a></div>
+      <div>کسب‌وکار <a class="link num" href="{{ url_for('auth.login', mobile='09121112233') }}">۰۹۱۲۱۱۱۲۲۳۳</a></div>
+      <div>مدیر <a class="link num" href="{{ url_for('auth.login', mobile='09120000000') }}">۰۹۱۲۰۰۰۰۰۰۰</a></div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

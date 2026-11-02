@@ -1,0 +1,38 @@
+# پایتون
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# دیتابیس‌ها و داده‌های کاربری — هرگز وارد مخزن نشوند
+instance/
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+
+# متغیرهای محیطی و رازها
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# لاگ و فایل‌های موقت
+*.log
+*.tmp
+_*.tmp
+_backups/
+
+# ابزارِ موقتِ ساخت اسکرین‌شات و مرورگرِ خودکار
+.gh_tmp/
+.playwright-mcp/
+
+# ویرانه‌ها و سیستم‌عامل
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini

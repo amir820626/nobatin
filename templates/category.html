@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% from "macros/ui.html" import ic, bizcard, empty %}
+{% block title %}{{ cat.title }} — نوبتین{% endblock %}
+{% block content %}
+<div class="section" style="margin-top:18px">
+  <div class="row" style="gap:14px">
+    <span class="cat-ic" style="width:62px;height:62px;border-radius:22px">{{ ic(cat.icon, 30) }}</span>
+    <div class="grow">
+      <span class="eyebrow">دستهٔ خدمات</span>
+      <h1 style="margin:0">{{ cat.title }}</h1>
+      <p class="small muted" style="margin:2px 0 0">{{ cat.blurb }}</p>
+    </div>
+    <form method="get" class="row" style="gap:8px">
+      <select name="city" data-autosubmit style="padding:9px 12px;border-radius:12px;border:1px solid var(--line-2);background:var(--paper-2);font-weight:600">
+        <option value="">همهٔ شهرها</option>
+        {% for c in cities %}<option value="{{ c.id }}" {{ 'selected' if city == c.id }}>{{ c.name }}</option>{% endfor %}
+      </select>
+      <select name="order" data-autosubmit style="padding:9px 12px;border-radius:12px;border:1px solid var(--line-2);background:var(--paper-2);font-weight:600">
+        <option value="best" {{ 'selected' if order == 'best' }}>پرطرفدارترین</option>
+        <option value="cheap" {{ 'selected' if order == 'cheap' }}>ارزان‌ترین</option>
+      </select>
+    </form>
+  </div>
+  <hr class="thin">
+  {% if results %}
+  <div class="grid g-3">{% for b in results %}{{ bizcard(b) }}{% endfor %}</div>
+  {% else %}
+    {% call empty('در این دسته کسب‌وکاری با این فیلترها نیست.', 'shop',
+                  'می‌توانید شهر دیگری را انتخاب کنید یا کسب‌وکارتان را ثبت کنید.') %}
+      <a class="btn" href="{{ url_for('business.new_biz') if user else url_for('auth.login', next=url_for('business.new_biz')) }}">ثبت کسب‌وکار</a>
+    {% endcall %}
+  {% endif %}
+</div>
+{% endblock %}

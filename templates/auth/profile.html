@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% from "macros/ui.html" import ic %}
+{% block title %}حساب کاربری{% endblock %}
+{% block content %}
+<div class="section" style="margin-top:24px">
+  <h1>حساب کاربری</h1>
+  <div class="grid g-2" style="align-items:start">
+    <form class="card stack" method="post" action="{{ url_for('auth.profile') }}">
+    {{ csrf() }}
+      <div class="field"><label for="name">نام شما</label>
+        <input class="input" id="name" name="name" value="{{ u.name }}" placeholder="نام و نام خانوادگی"></div>
+      <div class="field"><label>شمارهٔ موبایل</label>
+        <input class="input num" value="{{ u.mobile }}" disabled>
+        <span class="hint">تغییر شماره در نسخهٔ اول امکان‌پذیر نیست؛ با پشتیبانی تماس بگیرید.</span></div>
+      <div class="field"><label>نقش</label>
+        <input class="input" value="{{ {'customer':'مشتری','business':'صاحب کسب‌وکار','admin':'مدیر سامانه'}[u.role] }}" disabled></div>
+      <button class="btn" type="submit">{{ ic('check', 16) }} ذخیره</button>
+    </form>
+    <div class="stack">
+      {% if my_biz %}
+      <div class="card">
+        <h3>{{ ic('shop', 16) }} کسب‌وکار شما</h3>
+        <p class="small">{{ my_biz.name }}</p>
+        <a class="btn btn-sm" href="{{ url_for('business.dashboard', slug=my_biz.slug) }}">پنل کسب‌وکار</a>
+      </div>
+      {% endif %}
+      <div class="card">
+        <h3>{{ ic('ticket', 16) }} دسترسی‌های سریع</h3>
+        <ul class="stack" style="gap:8px">
+          <li><a class="link" href="{{ url_for('customer.panel') }}">نوبت‌های من</a></li>
+          <li><a class="link" href="{{ url_for('public.sms_box') }}">صندوق پیامک‌های ارسالی (حالت توسعه)</a></li>
+          <li><a class="link" href="{{ url_for('public.search') }}">جست‌وجوی کسب‌وکار</a></li>
+          {% if u.role == 'admin' %}<li><a class="link" href="{{ url_for('admin.panel') }}">پنل مدیریت</a></li>{% endif %}
+        </ul>
+      </div>
+      <div class="card card-flat small">
+        <b>ورود بعدی:</b> همیشه با همین شماره و کد پیامکی. رمز عبوری ذخیره نمی‌شود.
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

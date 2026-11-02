@@ -1,0 +1,12 @@
+[Unit]
+Description=Nobatin: prune OTP/SMS/audit/rate rows, mask spent codes, WAL checkpoint
+
+[Service]
+Type=oneshot
+User=nobatin
+Group=nobatin
+WorkingDirectory=/srv/nobatin
+EnvironmentFile=/srv/nobatin/.env
+Environment=NOBATIN_ENV=production
+ExecStart=/srv/nobatin/.venv/bin/python app.py --prune
+Nice=15

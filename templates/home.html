@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% from "macros/ui.html" import ic, bizcard %}
+{% block title %}نوبتین — نوبتت را همین حالا رزرو کن{% endblock %}
+{% block content %}
+<section class="hero">
+  <div class="hero-in">
+    <div>
+      <span class="eyebrow">{{ ic('bolt', 13) }} بدون تلفن، بدون انتظار</span>
+      <h1>نوبتت را <span class="hl">همین حالا</span> رزرو کن.</h1>
+      <p class="lead">استان، شهر و دستهٔ خدمات را انتخاب کن؛ زمان آزاد را ببین، با یک پیامک تأیید وارد شو و نوبتت را قطعی کن. اگر پرداخت نشود، نوبتی هم ثبت نمی‌شود.</p>
+
+      <form class="hero-search" method="get" data-cascade action="{{ url_for('public.search') }}">
+        <div class="searchbar">
+          <span class="ic">{{ ic('search', 19) }}</span>
+          <input name="q" placeholder="مثلاً: رنگ مو، دندان‌پزشکی، تعویض روغن…" autocomplete="off">
+          <button class="btn btn-dark" type="submit">جست‌وجو</button>
+        </div>
+        <div class="row" style="gap:9px">
+          <select class="input" name="prov" style="width:auto">
+            <option value="">همهٔ استان‌ها</option>
+            {% for p in all_provinces %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}
+          </select>
+          <select class="input" name="city" style="width:auto">
+            <option value="">همهٔ شهرها</option>
+            {% for c in all_cities %}<option value="{{ c.id }}" data-prov="{{ c.province_id }}">{{ c.name }} ({{ c.prov }})</option>{% endfor %}
+          </select>
+          <select class="input" name="cat" style="width:auto">
+            <option value="">همهٔ دسته‌ها</option>
+            {% for c in nav_cats %}<option value="{{ c.id }}">{{ c.title }}</option>{% endfor %}
+          </select>
+          <button class="btn btn-soft" type="submit">{{ ic('cal', 16) }} نمایش نتایج</button>
+        </div>
+      </form>
+
+      <div class="stats">
+        <div class="stat"><b>{{ stats.businesses|fa }}</b><span>کسب‌وکار فعال</span></div>
+        <div class="stat"><b>{{ stats.services|fa }}</b><span>خدمت قابل رزرو</span></div>
+        <div class="stat"><b>{{ cities_with_biz|fa }}</b><span>شهر تحت پوشش</span></div>
+        <div class="stat"><b>{{ stats.bookings|fa }}</b><span>نوبت قطعی‌شده</span></div>
+      </div>
+    </div>
+
+    <div class="hero-art" aria-hidden="true">
+      <div class="ring"></div>
+      <svg viewBox="0 0 380 380" width="100%" height="100%">
+        <defs>
+          <linearGradient id="hg1" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#12b39a"/><stop offset="1" stop-color="#0a8570"/>
+          </linearGradient>
+          <linearGradient id="hg2" x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0" stop-color="#f4a52a"/><stop offset="1" stop-color="#d9436a"/>
+          </linearGradient>
+        </defs>
+        <rect x="46" y="60" width="290" height="240" rx="26" fill="#fffdf8" stroke="#e2ddd0"/>
+        <rect x="46" y="60" width="290" height="46" rx="26" fill="#101a2c"/>
+        <circle cx="86" cy="83" r="7" fill="#f4a52a"/><circle cx="110" cy="83" r="7" fill="#12b39a" opacity=".8"/>
+        <text x="300" y="90" fill="#c9d3e4" font-size="19" font-family="Vazirmatn" text-anchor="middle">۱۴۰۵</text>
+        <g fill="#efeade">
+          {% for row in range(4) %}{% for col in range(7) %}
+          <rect x="{{ 66 + col * 38 }}" y="{{ 122 + row * 40 }}" width="30" height="28" rx="9"/>
+          {% endfor %}{% endfor %}
+        </g>
+        <rect x="{{ 66 + 2 * 38 }}" y="{{ 122 + 1 * 40 }}" width="30" height="28" rx="9" fill="url(#hg1)"/>
+        <rect x="{{ 66 + 4 * 38 }}" y="{{ 122 + 2 * 40 }}" width="30" height="28" rx="9" fill="#d9f5ef" stroke="#12b39a" stroke-dasharray="4 3"/>
+        <path d="M76 246 h230" stroke="#e2ddd0" stroke-width="1.5" stroke-dasharray="5 5"/>
+        <g transform="translate(150 232)">
+          <rect x="0" y="0" width="150" height="96" rx="18" fill="#101a2c"/>
+          <text x="76" y="42" fill="#fff" font-size="27" font-weight="700" font-family="Vazirmatn" text-anchor="middle">۱۴:۳۰</text>
+          <text x="76" y="70" fill="#8fe8d6" font-size="14" font-family="Vazirmatn" text-anchor="middle">نوبت شما قطعی شد</text>
+          <circle cx="24" cy="72" r="4" fill="url(#hg2)"/>
+        </g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-head">
+    <div class="t"><span class="eyebrow">{{ ic('grid', 13) }} دسته‌ها</span><h2>دنبال چه خدمتی هستی؟</h2></div>
+    <a class="link small" href="{{ url_for('public.search') }}">همهٔ کسب‌وکارها</a>
+  </div>
+  <div class="grid g-4">
+    {% for c in nav_cats %}
+    <a class="cat-tile lift" href="{{ url_for('public.category_page', cid=c.id) }}">
+      <span class="cat-ic">{{ ic(c.icon, 24) }}</span>
+      <b>{{ c.title }}</b>
+      <span>{{ c.blurb }}</span>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-head">
+    <div class="t"><span class="eyebrow">{{ ic('star', 13) }} پرطرفدارها</span><h2>امروز در نوبتین</h2></div>
+  </div>
+  <div class="rail">
+    {% for b in featured %}{{ bizcard(b) }}{% endfor %}
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-head"><div class="t"><span class="eyebrow">{{ ic('ticket', 13) }} سه قدم</span><h2>رزرو در نوبتین چطور کار می‌کند؟</h2></div></div>
+  <div class="grid g-3">
+    {% for step, ttl, txt, icon in [
+      ('۰۱', 'زمان آزاد را ببین', 'تقویم شمسی هر کسب‌وکار فقط زمان‌های واقعاً خالی را نشان می‌دهد؛ ساعات کاری و مرخصی‌ها را خودِ کسب‌وکار تنظیم می‌کند.', 'cal'),
+      ('۰۲', 'با کد پیامکی وارد شو', 'شماره موبایل، یک کد یک‌بارمصرف، تمام. نیازی به رمز عبور نیست و سبد شما تا ۱۰ دقیقه قفل می‌ماند.', 'shield'),
+      ('۰۳', 'قطعی کن و پیامک بگیر', 'پرداخت کامل یا پیش‌پرداخت. اگر پرداخت موفق نباشد، نوبتی ساخته نمی‌شود و زمان فوراً آزاد می‌شود.', 'ticket')] %}
+    <div class="card lift">
+      <div class="row-between"><span class="badge ink num">{{ step }}</span><span class="cat-ic">{{ ic(icon, 22) }}</span></div>
+      <h3 style="margin-top:12px">{{ ttl }}</h3>
+      <p class="small muted">{{ txt }}</p>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-head"><div class="t"><span class="eyebrow">{{ ic('wallet', 13) }} اقتصادی</span><h2>ارزان‌ترین خدمات این هفته</h2></div></div>
+  <div class="grid g-2">{% for b in deals %}{{ bizcard(b) }}{% endfor %}</div>
+</section>
+
+<section class="section promo">
+  <div class="promo-in">
+    <div class="promo-copy">
+      <span class="eyebrow">{{ ic('sparkle', 13) }} تبلیغ — برای صاحبان کسب‌وکار</span>
+      <h2>نوبت‌های خالی‌ات را همین‌جا پر کن.</h2>
+      <p class="promo-lead">یک صفحهٔ اختصاصی با تقویم شمسی، پیامک تأیید و گزارش مالی — بدون سایت، بدون
+        برنامه‌نویسی، بدون دستگاه وقت‌نویسی. خودتان قیمت، ساعت کاری و قوانین کنسلی را تعیین می‌کنید.</p>
+      <ul class="promo-list">
+        {% for txt in [
+          'تقویم شمسی؛ فقط ساعت‌های واقعاً آزاد به مشتری نشان داده می‌شود',
+          'ساعات کاری، تعطیلات و مرخصی‌ها را خودتان تنظیم کنید',
+          'پیامک تأیید رزرو و یادآوری، به خط مشتری',
+          'پرداخت کامل یا پیش‌پرداخت — تا پرداخت موفق نشود نوبتی قطعی نمی‌شود',
+          'قوانین کنسلی خودتان: مثلاً «تا ۲۴ ساعت قبل، ۵۰٪ بازپرداخت»',
+          'گزارش مالی و تسویهٔ جدا برای همین کسب‌وکار' ] %}
+        <li><span class="tick">{{ ic('check', 12) }}</span><span>{{ txt }}</span></li>
+        {% endfor %}
+      </ul>
+      <div class="promo-cta">
+        {% if user and my_biz %}
+        <a class="btn btn-lg btn-gold" href="{{ url_for('business.dashboard', slug=my_biz.slug) }}">
+          {{ ic('cal', 18) }} پنل «{{ my_biz.name }}»</a>
+        {% elif user %}
+        <a class="btn btn-lg btn-gold" href="{{ url_for('business.new_biz') }}">
+          {{ ic('shop', 18) }} ثبت کسب‌وکار</a>
+        {% else %}
+        <a class="btn btn-lg btn-gold" href="{{ url_for('auth.login', next=url_for('business.new_biz')) }}">
+          {{ ic('shop', 18) }} ثبت کسب‌وکار</a>
+        {% endif %}
+        {% if featured %}
+        <a class="btn btn-lg btn-outline-l" href="{{ url_for('public.business_page', slug=featured[0].slug) }}">
+          {{ ic('search', 17) }} نمونهٔ صفحه را ببین</a>
+        {% endif %}
+      </div>
+      <p class="promo-note">ثبت‌نام هزینه ندارد؛ کمیسیون پیش‌فرض {{ fee_percent|fa }}٪ از هر نوبت قطعی است.
+        {% if stats.today %}امروز {{ stats.today|fa }} نوبت قطعی در نوبتین رزرو شده است.{% endif %}
+        پس از تأیید مدیر، نوبت‌دهی آنلاین فعال می‌شود.</p>
+    </div>
+
+    <div class="promo-side" aria-hidden="true">
+      <span class="lbl">پیش‌نمایش پنل کسب‌وکار</span>
+      {% for hm, who, ttl, tone in [
+        ('۱۰:۳۰', 'مریم قاسمی — رنگ و لایت', 'قطعی', 'jade'),
+        ('۱۱:۱۵', 'مهدی رضوی — سشوار', 'در انتظار پرداخت', 'amber'),
+        ('۱۶:۰۰', 'سمانه آذری — کوتاهی', 'پیامک یادآوری', 'sky') ] %}
+      <div class="promo-slot{% if tone == 'jade' %} is-on{% endif %}">
+        <span>{{ ic('clock', 14) }} <b>{{ hm }}</b> — {{ who }}</span>
+        <span class="badge {{ tone }}">{{ ttl }}</span>
+      </div>
+      {% endfor %}
+      <span class="lbl" style="margin-top:6px">{{ ic('chart', 13) }} امروز: ۳ نوبت · ۱ پرداخت ناقص</span>
+    </div>
+  </div>
+</section>
+{% endblock %}

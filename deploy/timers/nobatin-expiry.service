@@ -1,0 +1,12 @@
+[Unit]
+Description=Nobatin: free expired carts and unpaid appointments
+
+[Service]
+Type=oneshot
+User=nobatin
+Group=nobatin
+WorkingDirectory=/srv/nobatin
+EnvironmentFile=/srv/nobatin/.env
+Environment=NOBATIN_ENV=production
+ExecStart=/srv/nobatin/.venv/bin/python app.py --expiry
+Nice=10

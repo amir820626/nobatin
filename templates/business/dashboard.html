@@ -1,0 +1,391 @@
+{% extends "base.html" %}
+{% from "macros/ui.html" import ic, status_badge, kpi, policy_list, empty %}
+{% block title %}پنل {{ biz.name }}{% endblock %}
+{% block content %}
+<div class="section" style="margin-top:22px">
+  <div class="row-between" style="{{ biz.style }}">
+    <div class="row">
+      <span class="biz-logo" style="width:52px;height:52px;border-radius:17px">{{ biz.initials }}</span>
+      <div>
+        <span class="eyebrow">{{ ic('shop', 13) }} پنل کسب‌وکار</span>
+        <h1 style="margin:0;font-size:1.5rem">{{ biz.name }} {{ status_badge(biz.status) }}</h1>
+        <span class="small muted">{{ biz.city_name }} — {{ biz.cat_title }} · <a class="link" href="{{ url_for('public.business_page', slug=biz.slug) }}">مشاهدهٔ صفحهٔ عمومی</a></span>
+      </div>
+    </div>
+    <div class="row" style="gap:8px">
+      <form method="post" action="{{ url_for('business.reminders', slug=biz.slug) }}">
+      {{ csrf() }}
+        <button class="btn btn-ghost btn-sm" type="submit">{{ ic('chat', 15) }} ارسال یادآوری‌ها</button></form>
+      <a class="btn btn-sm" href="{{ url_for('booking.pick', slug=biz.slug) }}">تقویم من</a>
+    </div>
+  </div>
+
+  {% if biz.status != 'active' %}
+  <div class="msg {{ 'amber' if biz.status == 'pending' else 'error' }}" style="margin-top:14px">
+    {{ ic('shield', 16) }} <span>{% if biz.status == 'pending' %}صفحهٔ شما در انتظار تأیید مدیر نوبتین است؛ پس از تأیید، رزرو آنلاین فعال می‌شود.{% else %}این مجموعه معلق شده است.{% endif %}</span></div>
+  {% endif %}
+
+  <div class="kpi" style="margin:18px 0">
+    {{ kpi(stats.today, 'نوبت تأییدشدهٔ این روز') }}
+    {{ kpi(stats.pending_pay, 'در انتظار پرداخت', 'amber' if stats.pending_pay) }}
+    {{ kpi(stats.week, 'نوبت این هفته') }}
+    {{ kpi(stats.cancel_rate, '٪ نرخ لغو') }}
+    {{ kpi(bal.receivable|money, 'تومان طلب از پلتفرم') }}
+  </div>
+
+  <nav class="tabs">
+    {% for key, label in [('today','نوبت‌های روز'), ('all','همهٔ نوبت‌ها'), ('services','خدمات'),
+                          ('hours','ساعات کاری و تعطیلی'), ('rules','مالی و قوانین'), ('profile','صفحهٔ من')] %}
+    <a href="{{ url_for('business.dashboard', slug=biz.slug, tab=key, date=iso) }}" class="{{ 'on' if tab == key }}">{{ label }}</a>
+    {% endfor %}
+  </nav>
+
+  <div class="two-col">
+    <div class="stack">
+      {% if tab in ('today',) %}
+      <section class="card">
+        <div class="row-between" style="margin-bottom:12px">
+          <h2 style="font-size:1.15rem">{{ ic('cal', 17) }} {{ iso|jdate }}</h2>
+          <div class="row" style="gap:6px">
+            {% for d in strip(7) %}
+            <a class="chip {{ 'on' if d.iso == iso }}" href="{{ url_for('business.dashboard', slug=biz.slug, date=d.iso, tab=tab) }}">{{ d.day|fa }} {{ d.month }}</a>
+            {% endfor %}
+          </div>
+        </div>
+        {% if not todays %}
+          {{ empty('برای این روز نوبتی ثبت نشده است.', 'ticket') }}
+        {% else %}
+        <div class="stack" style="gap:10px">
+          {% for a in todays %}
+          <div class="ticket" style="--biz-hue:{{ biz.hue }}">
+            <span class="stub"></span>
+            <div class="ticket-head">
+              <div><h3>{{ a.svc }}</h3>
+                <span class="small">{{ a.cname or 'مهمان' }} · <span class="num">{{ a.mobile }}</span></span></div>
+              {{ status_badge(a.status) }}
+            </div>
+            <div class="when">
+              <div class="big">{{ a.start_hm|fa }}<small>{{ a.date|jdate }}</small></div>
+              <dl class="kv grow">
+                <dt>پایان</dt><dd class="num">{{ a.end_hm|fa }}</dd>
+                <dt>مبلغ سرویس</dt><dd>{{ a.amount|money }} تومان</dd>
+                <dt>پرداخت آنلاین</dt><dd class="{{ 'muted' if not a.paid_ok }}">
+                  {{ a.paid_ok|money }} تومان — {{ pay_status_label[a.pay_status] }}</dd>
+              </dl>
+            </div>
+            <div class="perforated"></div>
+            <div class="ticket-foot">
+              <span class="code num">{{ a.code }}</span>
+              <div class="row" style="gap:6px">
+                {% if a.status == 'confirmed' %}
+                <form method="post" action="{{ url_for('business.appt_action', aid=a.id, action='completed') }}">
+                {{ csrf() }}
+                  <button class="btn btn-sm" type="submit">{{ ic('check', 14) }} انجام شد</button></form>
+                <form method="post" action="{{ url_for('business.appt_action', aid=a.id, action='no_show') }}">
+                {{ csrf() }}
+                  <button class="btn btn-ghost btn-sm" type="submit">حضور نیافت</button></form>
+                {% endif %}
+                {% if a.status in ('confirmed', 'pending_payment') %}
+                <form method="post" action="{{ url_for('business.appt_action', aid=a.id, action='cancel') }}"
+                      data-confirm="لغو این نوبت؟ بازپرداخت: {{ a.cancel.refund_amount|money }} تومان">
+                  {{ csrf() }}
+                  <input type="hidden" name="reason" value="لغو توسط مجموعه">
+                  <button class="btn btn-danger btn-sm" type="submit">لغو</button></form>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </section>
+
+      <section class="card">
+        <h2 style="font-size:1.1rem">{{ ic('bolt', 16) }} زمان‌های آزاد این روز</h2>
+        <div class="slots">
+          {% for s in slots %}
+          <span class="slot {{ 'past' if s.past }} {{ 'taken' if s.taken }} {{ 'mine' if s.mine }}" title="{{ s.hm }}">
+            {{ s.label }}{% if s.taken %}<span class="dur">رزرو</span>{% elif s.past %}<span class="dur">گذشت</span>{% else %}<span class="dur">آزاد</span>{% endif %}</span>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {% if tab == 'all' %}
+      <section class="card">
+        <h2 style="font-size:1.15rem">{{ ic('inbox', 17) }} همهٔ نوبت‌ها</h2>
+        <div class="table-wrap" style="margin-top:12px">
+          <table class="t">
+            <thead><tr><th>کد</th><th>زمان</th><th>خدمت</th><th>مشتری</th><th>مبلغ</th><th>پرداخت</th><th>وضعیت</th><th>عملیات</th></tr></thead>
+            <tbody>
+              {% for a in appts %}
+              <tr>
+                <td class="num">{{ a.code }}</td>
+                <td class="num small">{{ a.date|jdate }} — {{ a.start_hm|fa }}</td>
+                <td>{{ a.svc }}</td>
+                <td class="small">{{ a.cname }}<div class="tiny muted num">{{ a.mobile }}</div></td>
+                <td class="money tiny">{{ a.amount|money }}</td>
+                <td class="tiny">{{ pay_status_label[a.pay_status] }}</td>
+                <td>{{ status_badge(a.status) }}</td>
+                <td class="row" style="gap:5px">
+                  {% if a.status == 'confirmed' %}
+                  <form method="post" action="{{ url_for('business.appt_action', aid=a.id, action='completed') }}">
+                  {{ csrf() }}
+                    <button class="btn btn-ghost btn-sm" type="submit">انجام شد</button></form>
+                  {% endif %}
+                  {% if a.status in ('confirmed','pending_payment') %}
+                  <form method="post" action="{{ url_for('business.appt_action', aid=a.id, action='cancel') }}">
+                  {{ csrf() }}
+                    <input type="hidden" name="reason" value="لغو توسط مجموعه">
+                    <button class="btn btn-danger btn-sm" type="submit">لغو</button></form>
+                  {% endif %}
+                </td>
+              </tr>
+              {% else %}<tr><td colspan="8" class="center muted">نوبتی ثبت نشده است.</td></tr>{% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+      {% endif %}
+
+      {% if tab == 'services' %}
+      <section class="card">
+        <h2 style="font-size:1.15rem">{{ ic('sparkle', 17) }} خدمات و قیمت‌ها</h2>
+        <p class="small muted">مدت سرویس، گام تقویم را تعیین می‌کند؛ اگر سرویس ۹۰ دقیقه‌ای دارید، زمان‌های ۳۰ دقیقه‌ای طوری چیده می‌شوند که به پایان ساعات کاری نخورد.</p>
+        <div class="stack" style="gap:10px;margin-top:12px">
+          {% for s in services %}
+          <form method="post" action="{{ url_for('business.save_service', slug=biz.slug) }}" class="card-flat">
+          {{ csrf() }}
+            <input type="hidden" name="id" value="{{ s.id }}">
+            <div class="grid g-2" style="gap:10px">
+              <div class="field" style="margin:0"><label>عنوان</label>
+                <input class="input" name="title" value="{{ s.title }}"></div>
+              <div class="field" style="margin:0"><label>قیمت (تومان)</label>
+                <input class="input num" name="price" value="{{ s.price }}" inputmode="numeric"></div>
+              <div class="field" style="margin:0"><label>مدت (دقیقه)</label>
+                <input class="input num" name="duration" value="{{ s.duration_min }}" inputmode="numeric"></div>
+              <div class="field" style="margin:0"><label>فاصلهٔ آماده‌سازی (دقیقه)</label>
+                <input class="input num" name="buffer" value="{{ s.buffer_min }}" inputmode="numeric"></div>
+            </div>
+            <div class="field" style="margin:10px 0 0"><label>توضیح برای مشتری</label>
+              <input class="input" name="description" value="{{ s.description }}"></div>
+            <div class="row-between" style="margin-top:10px">
+              <label class="check"><input type="checkbox" name="is_active" {{ 'checked' if s.is_active }}> فعال و قابل رزرو</label>
+              <div class="row" style="gap:8px">
+                <button class="btn btn-sm" type="submit">ذخیرهٔ تغییرات</button>
+              </div>
+            </div>
+          </form>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="card">
+        <h3 style="font-size:1.05rem">خدمت تازه</h3>
+        <form method="post" action="{{ url_for('business.save_service', slug=biz.slug) }}">
+        {{ csrf() }}
+          <div class="grid g-2" style="gap:10px">
+            <div class="field" style="margin:0"><label>عنوان *</label><input class="input" name="title" required placeholder="مثلاً رنگ مو"></div>
+            <div class="field" style="margin:0"><label>قیمت (تومان)</label><input class="input num" name="price" value="350000" inputmode="numeric"></div>
+            <div class="field" style="margin:0"><label>مدت (دقیقه)</label><input class="input num" name="duration" value="60" inputmode="numeric"></div>
+            <div class="field" style="margin:0"><label>توضیح</label><input class="input" name="description"></div>
+          </div>
+          <button class="btn" type="submit" style="margin-top:8px">{{ ic('bolt', 15) }} افزودن خدمت</button>
+        </form>
+      </section>
+      {% endif %}
+
+      {% if tab == 'hours' %}
+      <section class="card">
+        <h2 style="font-size:1.15rem">{{ ic('clock', 17) }} ساعات کاری هفتگی</h2>
+        <p class="small muted">تغییر ساعات، بلافاصله زمان‌های آزاد تقویم را بازمی‌چیند. نوبت‌های گرفته‌شده تغییر نمی‌کنند.</p>
+        <form method="post" action="{{ url_for('business.save_hours', slug=biz.slug) }}">
+        {{ csrf() }}
+          <div class="stack" style="gap:8px;margin-top:12px">
+            {% for name in ['شنبه','یکشنبه','دوشنبه','سه‌شنبه','چهارشنبه','پنج‌شنبه','جمعه'] %}
+            {% set wd = loop.index0 %}
+            {% set h = hour_map.get(wd) %}
+            <div class="row-between" style="border:1px solid var(--line);border-radius:13px;padding:10px 12px">
+              <label class="check"><input type="checkbox" name="on{{ wd }}" {{ 'checked' if h }}> <b style="width:84px;display:inline-block">{{ name }}</b></label>
+              <div class="row" style="gap:6px">
+                <input class="input num" style="width:96px" name="start{{ wd }}" value="{{ h.start_hm if h else '09:00' }}">
+                <span class="tiny muted">تا</span>
+                <input class="input num" style="width:96px" name="end{{ wd }}" value="{{ h.end_hm if h else '19:00' }}">
+                <label class="tiny muted">گام</label>
+                <input class="input num" style="width:74px" name="slot{{ wd }}" value="{{ h.slot_min if h else 30 }}" inputmode="numeric">
+                <label class="tiny muted">دقیقه</label>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          <button class="btn" type="submit" style="margin-top:12px">{{ ic('check', 15) }} ذخیرهٔ ساعات کاری</button>
+        </form>
+      </section>
+
+      <section class="card">
+        <h3 style="font-size:1.05rem">{{ ic('bolt', 15) }} تعطیلی روزهای خاص</h3>
+        <p class="tiny muted">مرخصی، تعطیلات رسمی یا بستن یک روز. زمان‌های آزاد آن روز از تقویم حذف می‌شود.</p>
+        <form method="post" action="{{ url_for('business.block_day', slug=biz.slug) }}" class="row" style="gap:8px">
+        {{ csrf() }}
+          <input class="input" type="date" name="date" style="width:170px" required>
+          <input class="input" name="reason" placeholder="دلیل (اختیاری)" style="width:180px">
+          <button class="btn btn-sm" type="submit">تعطیل کردن</button>
+        </form>
+        <div class="row" style="gap:8px;margin-top:12px">
+          {% for b in blocks %}
+          <form method="post" action="{{ url_for('business.block_day', slug=biz.slug) }}" class="chip">
+          {{ csrf() }}
+            <input type="hidden" name="date" value="{{ b.date }}">
+            <input type="hidden" name="_remove" value="1">
+            <button class="tiny" type="submit" style="background:none;border:0;cursor:pointer;color:inherit">
+              {{ b.date|jdate }}{% if b.reason %} — {{ b.reason }}{% endif %} ✕</button>
+          </form>
+          {% else %}<span class="tiny muted">روز تعطیلی ثبت نشده است.</span>{% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {% if tab == 'rules' %}
+      <section class="card">
+        <h2 style="font-size:1.15rem">{{ ic('wallet', 17) }} مالی و قوانین کنسلی</h2>
+        <form method="post" action="{{ url_for('business.save_rules', slug=biz.slug) }}" class="stack" style="gap:14px">
+        {{ csrf() }}
+          <div class="grid g-3">
+            <div class="field" style="margin:0"><label>نوع پرداخت</label>
+              <select class="input" name="payment_mode">
+                {% for v, l in [('full','پرداخت کامل آنلاین'),('deposit','پیش‌پرداخت آنلاین'),('free','پرداخت در محل')] %}
+                <option value="{{ v }}" {{ 'selected' if biz.payment_mode == v }}>{{ l }}</option>{% endfor %}
+              </select></div>
+            <div class="field" style="margin:0"><label>مبلغ پیش‌پرداخت (تومان)</label>
+              <input class="input num" name="deposit" value="{{ biz.deposit_amount }}" inputmode="numeric"></div>
+            <div class="field" style="margin:0"><label>قفل سبد (دقیقه)</label>
+              <input class="input num" name="hold_minutes" value="{{ biz.hold_minutes }}" inputmode="numeric"></div>
+          </div>
+          <div>
+            <h3 style="font-size:1rem">قوانین کنسلی</h3>
+            <p class="tiny muted">نوبت‌های قبلی با قوانین خودشان می‌مانند؛ تغییر قوانین فقط روی رزروهای تازه اثر دارد.</p>
+            <div class="stack" id="rules" style="gap:8px;margin-top:8px">
+              {% for r in policy %}
+              <div class="row rule" style="gap:8px">
+                <label class="tiny">حداقل</label>
+                <input class="input num" style="width:96px" name="rule_hours" value="{{ r.min_hours }}" inputmode="numeric">
+                <label class="tiny">ساعت تا شروع → بازپرداخت</label>
+                <input class="input num" style="width:88px" name="refund_{{ r.min_hours }}" data-refund
+                       value="{{ r.refund_percent }}" inputmode="numeric">
+                <label class="tiny">٪</label>
+                <button type="button" class="btn btn-ghost btn-sm" data-rule-remove>حذف</button>
+              </div>
+              {% endfor %}
+            </div>
+            <button type="button" class="btn btn-ghost btn-sm" style="margin-top:8px" data-rule-add="#rules">
+              {{ ic('bolt', 14) }} افزودن قانون</button>
+            <template data-rule-tpl>
+              <div class="row rule" style="gap:8px">
+                <label class="tiny">حداقل</label>
+                <input class="input num" style="width:96px" name="rule_hours" value="1" inputmode="numeric">
+                <label class="tiny">ساعت تا شروع → بازپرداخت</label>
+                <input class="input num" style="width:88px" name="refund_1" data-refund value="0" inputmode="numeric">
+                <label class="tiny">٪</label>
+                <button type="button" class="btn btn-ghost btn-sm" data-rule-remove>حذف</button>
+              </div>
+            </template>
+          </div>
+          <button class="btn" type="submit">{{ ic('check', 15) }} ذخیرهٔ قوانین</button>
+        </form>
+      </section>
+
+      <section class="card">
+        <h3 style="font-size:1.05rem">{{ ic('wallet', 15) }} وضعیت مالی من</h3>
+        <div class="kpi" style="margin:10px 0">
+          {{ kpi(bal.gross|money, 'فروش تأییدشده (تومان)') }}
+          {{ kpi(bal.refunds|money, 'بازپرداخت‌شده') }}
+          {{ kpi(bal.pending_refunds|money, 'بازپرداخت در جریان', 'amber' if bal.pending_refunds) }}
+          {{ kpi(bal.platform_fee|money, 'کمیسیون پلتفرم (' ~ bal.fee_percent|fa ~ '٪)') }}
+          {{ kpi(bal.paid_out|money, 'تسویه‌شده') }}
+          {{ kpi(bal.receivable|money, 'ماندهٔ قابل تسویه') }}
+        </div>
+        <p class="tiny muted">کمیسیون از {{ bal.fee_percent|fa }}٪ است و در فرمول تسویه لحاظ شده: فروش − بازپرداخت‌ها − کمیسیون − تسویه‌های انجام‌شده.</p>
+      </section>
+
+      <section class="card">
+        <h3 style="font-size:1.05rem">درخواست‌های بازپرداخت</h3>
+        <div class="table-wrap" style="margin-top:10px">
+          <table class="t">
+            <thead><tr><th>کد نوبت</th><th>مبلغ</th><th>٪</th><th>قانون اعمال‌شده</th><th>وضعیت</th></tr></thead>
+            <tbody>{% for r in refunds %}
+              <tr><td class="num">{{ r.code }}</td><td class="money">{{ r.amount|money }}</td>
+                <td class="num">{{ r.percent|fa }}٪</td><td class="tiny">{{ r.rule_label }}</td>
+                <td>{{ status_badge(r.status) }}</td></tr>
+            {% else %}<tr><td colspan="5" class="center muted">موردی نیست.</td></tr>{% endfor %}</tbody>
+          </table>
+        </div>
+      </section>
+      {% endif %}
+
+      {% if tab == 'profile' %}
+      <section class="card">
+        <h2 style="font-size:1.15rem">{{ ic('shop', 17) }} چیزی که مشتری می‌بیند</h2>
+        <form method="post" action="{{ url_for('business.save_profile', slug=biz.slug) }}" class="stack" style="gap:12px">
+        {{ csrf() }}
+          <div class="grid g-2">
+            <div class="field" style="margin:0"><label>نام</label><input class="input" name="name" value="{{ biz.name }}"></div>
+            <div class="field" style="margin:0"><label>دسته</label>
+              <select class="input" name="category">{% for c in cats %}<option value="{{ c.id }}" {{ 'selected' if c.id == biz.category_id }}>{{ c.title }}</option>{% endfor %}</select></div>
+            <div class="field" style="margin:0"><label>حوزهٔ کاری (محله)</label>
+              <input class="input" name="district" value="{{ biz.district or '' }}" list="distList"
+                     placeholder="مثلاً پاسداران">
+              <datalist id="distList">{% for d in districts %}<option value="{{ d.name }}">{% endfor %}</datalist>
+              <span class="tiny muted">نام‌های یک‌شکل (با یا بدون نیم‌فاصله) یک محله حساب می‌شوند.</span></div>
+            <div class="field" style="margin:0"><label>تلفن</label><input class="input num" name="phone" value="{{ biz.phone }}"></div>
+          </div>
+          <div class="field" style="margin:0"><label>نشانی کامل</label><input class="input" name="address" value="{{ biz.address }}"></div>
+          <div class="field" style="margin:0"><label>معرفی</label><textarea class="input" name="about">{{ biz.about }}</textarea></div>
+          <div class="field" style="margin:0"><label>رنگ برند: <span class="num" id="hv">{{ biz.hue }}</span></label>
+            <input type="range" name="hue" min="0" max="359" value="{{ biz.hue }}" data-live-text="#hv"></div>
+          <button class="btn" type="submit">ذخیره</button>
+        </form>
+      </section>
+      {% endif %}
+    </div>
+
+    <aside class="stack">
+      <div class="card">
+        <h3>{{ ic('chart', 16) }} عملکرد ۶ ماه</h3>
+        <div class="bars-box"><div class="bars">
+            {% set mx = months|map(attribute='n')|max or 1 %}
+            {% for m in months|reverse %}
+            <div class="b" style="height:{{ (m.n / mx * 100)|round }}%" title="{{ m.m }} — {{ m.n|fa }} نوبت"><span>{{ m.m[5:7]|fa }}</span></div>
+            {% endfor %}
+        </div></div>
+      </div>
+      <div class="card">
+        <h3>{{ ic('sparkle', 16) }} پرفروش‌ترین خدمات</h3>
+        <ul class="stack" style="gap:9px">
+          {% for t in top %}
+          <li><div class="bar-row"><span class="small">{{ t.title }}</span>
+            <span class="bar-track"><span class="bar-fill" style="width:{{ (t.rev / (top|map(attribute='rev')|max or 1) * 100)|round }}%"></span></span>
+            <span class="tiny money">{{ t.rev|money }}</span></div></li>
+          {% else %}<li class="small muted">داده‌ای نیست.</li>{% endfor %}
+        </ul>
+      </div>
+      <div class="card">
+        <h3>{{ ic('wallet', 16) }} آخرین تراکنش‌ها</h3>
+        <ul class="stack" style="gap:8px">
+          {% for t in recent_tx %}
+          <li class="tiny row-between"><span class="num">{{ t.reference }}</span>
+            <span class="money">{{ t.amount|money }}</span>{{ status_badge(t.status) }}</li>
+          {% else %}<li class="small muted">تراکنشی نیست.</li>{% endfor %}
+        </ul>
+        <hr class="thin">
+        <h3>{{ ic('chat', 16) }} تسویه‌ها</h3>
+        <ul class="stack" style="gap:8px">
+          {% for s in settlements %}
+          <li class="tiny row-between"><span class="num">{{ s.period_from }} → {{ s.period_to }}</span>
+            <span class="money">{{ s.amount|money }}</span>{{ status_badge(s.status) }}</li>
+          {% else %}<li class="small muted">تسویه‌ای ثبت نشده.</li>{% endfor %}
+        </ul>
+      </div>
+    </aside>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,10 @@
+[Unit]
+Description=هر شب ۰۳:۴۰: نسخهٔ پشتیبان دیتابیس
+
+[Timer]
+OnCalendar=*-*-* 03:40:00
+Persistent=true
+RandomizedDelaySec=20min
+
+[Install]
+WantedBy=timers.target

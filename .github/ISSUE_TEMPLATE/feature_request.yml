@@ -1,0 +1,57 @@
+name: پیشنهاد قابلیت
+description: چیزی که نسخهٔ اول ندارد و لازم است
+title: "[feature] "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        نسخهٔ اولِ نوبتین دامنهٔ مشخصی دارد. این‌ها عمداً بیرون از نسخهٔ اول‌اند:
+        امتیاز و نظر مشتری، کد تخفیف، چند کارمند/چند شعبه، لیست انتظار،
+        گزارش‌های پیشرفته، نوبت ارتقایافته (promoted) و اپ موبایل. اگر پیشنهادتان
+        یکی از این‌هاست، باز هم بنویسید — فقط بدانید که برای نسخهٔ دوم است.
+  - type: textarea
+    id: problem
+    attributes:
+      label: چه مشکلی را حل می‌کند؟
+      description: «به‌عنوانِ … می‌خواهم … تا …» بهتر از هر چیز کار می‌کند.
+      placeholder: |
+        به‌عنوان مالک کسب‌وکار می‌خواهم نوبت‌های «حضور نیافت» را در یک لیست ببینم
+        تا ساعات پرت را بشناسم.
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: راه‌حل پیشنهادی
+      description: صفحه، فیلد یا رفتار دقیق؛ اگر جدول یا ستون جدید لازم دارد بگویید.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: راه‌حل‌های دیگر که فکر کردید
+  - type: dropdown
+    id: area
+    attributes:
+      label: کجای پروژه؟
+      options:
+        - عمومی (خانه، جست‌وجو، صفحهٔ کسب‌وکار)
+        - رزرو و پرداخت
+        - پنل کسب‌وکار
+        - پنل مشتری
+        - پنل مدیریت و مالی
+        - پیامک و یادآوری
+        - استقرار و عملیات
+        - رابط و دسترس‌پذیری
+  - type: dropdown
+    id: risk
+    attributes:
+      label: به پول یا نوبتِ قطعی دست می‌زند؟
+      description: |
+        هر تغییری که `finalize_payment`، `cancel_appointment`، `refunds` یا
+        `settlements` را لمس کند، باید با بخشِ آزمونِ جدید همراه باشد.
+      options:
+        - "نه"
+        - "بله"
+        - "نمی‌دانم"
+    validations:
+      required: true

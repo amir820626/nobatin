@@ -1,0 +1,127 @@
+{% from "macros/ui.html" import ic %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{% block title %}{{ site_name }} — نوبت‌دهی آنلاین{% endblock %}</title>
+  <meta name="description" content="{% block desc %}جست‌وجو، رزرو و پرداخت آنلاین نوبت از کسب‌وکارهای معتبر شهر شما.{% endblock %}">
+  <meta name="theme-color" content="#101a2c">
+  <link rel="icon" href="{{ asset('img/logo.svg') }}">
+  <link rel="stylesheet" href="{{ asset('css/nobatin.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+<a class="skip" href="#main" style="position:absolute;right:-9999px">پرش به محتوا</a>
+<header class="top">
+  <div class="wrap top-in">
+    <a class="brand" href="{{ url_for('public.home') }}">
+      <svg class="mark" viewBox="0 0 40 40"><use href="{{ url_for('static', filename='img/sprite.svg') }}#i-logo"></use></svg>
+      <span>نوبت<b>ین</b></span>
+    </a>
+    <nav class="nav">
+      <a href="{{ url_for('public.home') }}" class="{{ 'on' if request.endpoint == 'public.home' }}">خانه</a>
+      <a href="{{ url_for('public.search') }}" class="{{ 'on' if request.endpoint == 'public.search' }}">جست‌وجوی کسب‌وکار</a>
+      <span class="push"></span>
+      {% if user %}
+        {% if user.role == 'admin' %}
+          <a href="{{ url_for('admin.panel') }}" class="{{ 'on' if request.blueprint == 'admin' }}">پنل مدیریت</a>
+        {% elif user.role == 'business' %}
+          <a href="{{ url_for('business.panel') }}" class="{{ 'on' if request.blueprint == 'business' }}">پنل کسب‌وکار</a>
+        {% else %}
+          <a href="{{ url_for('customer.panel') }}" class="{{ 'on' if request.blueprint == 'customer' }}">نوبت‌های من</a>
+        {% endif %}
+      {% else %}
+        <a href="{{ url_for('public.about') }}">درباره نوبتین</a>
+      {% endif %}
+      {% if user %}
+        <a class="btn btn-ghost btn-sm" href="{{ url_for('auth.logout') }}">{{ ic('x', 14) }} خروج</a>
+      {% else %}
+        <a class="btn btn-sm" href="{{ url_for('auth.login') }}">{{ ic('phone', 15) }} ورود با موبایل</a>
+      {% endif %}
+    </nav>
+    <span class="push"></span>
+    {% if user %}
+      <details class="who">
+        <summary class="avatar" title="{{ user.name or user.mobile }}">{{ (user.name or user.mobile)[:1] }}</summary>
+        <div class="who-menu">
+          <div class="small strong">{{ user.name or 'کاربر نوبتین' }}</div>
+          <div class="tiny muted num">{{ user.mobile }}</div>
+          <hr class="thin">
+          {% if user.role == 'customer' %}<a href="{{ url_for('customer.panel') }}">نوبت‌های من</a>
+          <a href="{{ url_for('business.new_biz') }}">کسب‌وکار خود را ثبت کنید</a>{% endif %}
+          {% if user.role == 'business' %}<a href="{{ url_for('business.panel') }}">پنل کسب‌وکار</a>{% endif %}
+          {% if user.role == 'admin' %}<a href="{{ url_for('admin.panel') }}">پنل مدیریت</a>{% endif %}
+          <a href="{{ url_for('auth.profile') }}">حساب کاربری</a>
+          <a href="{{ url_for('auth.logout') }}">خروج</a>
+        </div>
+      </details>
+    {% else %}
+      <a class="btn btn-sm" href="{{ url_for('auth.login') }}">{{ ic('phone', 15) }} ورود با موبایل</a>
+    {% endif %}
+  </div>
+</header>
+
+<main id="main" class="wrap">
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% if msgs %}
+      <div class="flash stack" style="gap:8px">
+        {% for cat, m in msgs %}<div class="msg {{ cat }}">{{ ic('sparkle' if cat == 'ok' else 'bolt', 17) }} <span>{{ m }}</span></div>{% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot-in">
+      <div>
+        <a class="brand" href="{{ url_for('public.home') }}" style="margin-bottom:8px">
+          <svg class="mark" viewBox="0 0 40 40"><use href="{{ url_for('static', filename='img/sprite.svg') }}#i-logo"></use></svg>
+          <span>نوبت<b>ین</b></span>
+        </a>
+        <p class="small muted" style="max-width:34ch">سامانهٔ جست‌وجو، رزرو و پرداخت آنلاین نوبت. زمان شما، قطعی و بدون دوباره‌کاری.</p>
+        <p class="small">{{ ic('phone', 14) }} پشتیبانی: <span class="num">{{ support_phone }}</span></p>
+      </div>
+      <div>
+        <h4>دسته‌ها</h4>
+        {% for c in nav_cats[:5] %}<a href="{{ url_for('public.category_page', cid=c.id) }}">{{ c.title }}</a>{% endfor %}
+      </div>
+      <div>
+        <h4>نوبتین</h4>
+        <a href="{{ url_for('public.about') }}">دربارهٔ ما</a>
+        <a href="{{ url_for('public.terms') }}">قوانین و مقررات</a>
+        <a href="{{ url_for('public.press_kit') }}">هویت بصری</a>
+        <a href="{{ url_for('business.new_biz') }}">کسب‌وکار خود را ثبت کنید</a>
+      </div>
+      <div>
+        <h4>حساب شما</h4>
+        <a href="{{ url_for('customer.panel') }}">نوبت‌های من</a>
+        <a href="{{ url_for('auth.login') }}">ورود / ثبت‌نام</a>
+        <a href="{{ url_for('auth.profile') }}">مشخصات کاربری</a>
+      </div>
+    </div>
+    <div class="foot-bot">
+      <span>© {{ jtoday.year|fa }} نوبتین — همهٔ حقوق محفوظ است.</span>
+      <span class="tiny">پرداخت درگاه آزمایشی (sandbox) — داده‌های نمونه.</span>
+    </div>
+  </div>
+</footer>
+
+<nav class="tabbar">
+  <a href="{{ url_for('public.home') }}" class="{{ 'on' if request.endpoint == 'public.home' }}"><i>{{ ic('sparkle', 19) }}</i>خانه</a>
+  <a href="{{ url_for('public.search') }}" class="{{ 'on' if request.endpoint == 'public.search' }}"><i>{{ ic('search', 19) }}</i>جست‌وجو</a>
+  <a href="{{ url_for('customer.panel') }}" class="{{ 'on' if request.blueprint == 'customer' }}"><i>{{ ic('ticket', 19) }}</i>نوبت‌ها</a>
+  {% if user %}
+    <a href="{{ url_for('auth.profile') }}"><i>{{ ic('user', 19) }}</i>حساب</a>
+  {% else %}
+    <a href="{{ url_for('auth.login') }}"><i>{{ ic('phone', 19) }}</i>ورود</a>
+  {% endif %}
+</nav>
+
+  <script src="{{ asset('js/ui.js') }}" defer></script>
+  <script src="{{ asset('js/filters.js') }}" defer></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

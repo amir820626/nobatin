@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% from "macros/ui.html" import ic, bizcard, empty %}
+{% block title %}جست‌وجو در نوبتین{% if q %} — «{{ q }}»{% endif %}{% endblock %}
+{% block content %}
+<div class="section" style="margin-top:18px">
+  <h1>{{ ic('search', 22) }} جست‌وجوی کسب‌وکار</h1>
+  <form method="get" action="{{ url_for('public.search') }}" class="card" data-cascade style="padding:14px">
+    <div class="searchbar" style="margin-bottom:12px">
+      <span class="ic">{{ ic('search', 19) }}</span>
+      <input name="q" value="{{ q }}" placeholder="نام کسب‌وکار یا خدمت…">
+      <button class="btn" type="submit">جست‌وجو</button>
+    </div>
+    <div class="filters">
+      <select name="prov" data-autosubmit>
+        <option value="">همهٔ استان‌ها</option>
+        {% for p in all_provinces %}<option value="{{ p.id }}" {{ 'selected' if prov == p.id }}>{{ p.name }}</option>{% endfor %}
+      </select>
+      <select name="city" data-autosubmit>
+        <option value="">همهٔ شهرها</option>
+        {% for c in all_cities %}<option value="{{ c.id }}" data-prov="{{ c.province_id }}"
+          {{ 'selected' if city == c.id }}>{{ c.name }} ({{ c.prov }})</option>{% endfor %}
+      </select>
+      {% if districts %}
+      <select name="district" data-autosubmit>
+        <option value="">همهٔ محله‌ها</option>
+        {% for d in districts %}<option value="{{ d.id }}" data-city="{{ d.city_id }}"
+          data-prov="{{ d.province_id }}" {{ 'selected' if district == d.id }}>{{ d.name }}</option>{% endfor %}
+      </select>
+      {% endif %}
+      <select name="order" data-autosubmit>
+        <option value="best" {{ 'selected' if order == 'best' }}>پرطرفدارترین</option>
+        <option value="cheap" {{ 'selected' if order == 'cheap' }}>ارزان‌ترین</option>
+        <option value="new" {{ 'selected' if order == 'new' }}>جدیدترین</option>
+      </select>
+      <noscript><button class="btn btn-soft" type="submit">اعمال فیلترها</button></noscript>
+    </div>
+  </form>
+
+  {% if pills %}
+  <div class="row-between" style="margin:14px 0 0">
+    <span class="tiny muted">{{ ic('bolt', 13) }} فیلترهای فعال:</span>
+    <div class="chips">
+      {% for p in pills %}
+      <a class="chip on" href="{{ p.url }}" title="برداشتن این فیلتر">
+        {% if p.key == 'q' %}«{{ p.label }}»{% else %}{{ p.label }}{% endif %} ✕</a>
+      {% endfor %}
+      <a class="chip" href="{{ url_for('public.search') }}">پاک کردن همه</a>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="row-between" style="margin:18px 0 12px">
+    <p class="small muted" style="margin:0">
+      {{ results|length|fa }} نتیجه{% if q %} برای «{{ q }}»{% endif %} از {{ total|fa }} کسب‌وکار فعال</p>
+  </div>
+
+  <div class="chips" style="margin-bottom:16px">
+    <a class="chip {{ 'on' if not cat }}" href="{{ url_for('public.search', q=q, city=city, prov=prov, district=district, order=order) }}">همهٔ دسته‌ها</a>
+    {% for c in nav_cats %}
+    <a class="chip {{ 'on' if cat == c.id }}" href="{{ url_for('public.search', cat=c.id, city=city, prov=prov, district=district, q=q, order=order) }}">{{ c.title }}</a>
+    {% endfor %}
+  </div>
+
+  {% if results %}
+  <div class="grid g-3">{% for b in results %}{{ bizcard(b) }}{% endfor %}</div>
+  {% else %}
+    {% call empty('نتیجه‌ای پیدا نشد.', 'search',
+                  'سعی کنید کلمهٔ کوتاه‌تری بنویسید یا فیلترها را بردارید.') %}
+      <a class="btn btn-ghost" href="{{ url_for('public.search') }}">پاک کردن فیلترها</a>
+    {% endcall %}
+  {% endif %}
+</div>
+{% endblock %}

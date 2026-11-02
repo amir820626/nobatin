@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% from "macros/ui.html" import ic %}
+{% block title %}درگاه پرداخت{% endblock %}
+{% block content %}
+<div class="bank">
+  <div class="card">
+    <div class="row-between" style="padding-bottom:10px;border-bottom:1px solid var(--line)">
+      <span class="small strong">{{ ic('lock', 15) }} درگاه پرداخت امن</span>
+      <span class="badge amber">sandbox — آزمایشی</span>
+    </div>
+    <div class="bank-amt">
+      <span class="tiny muted">مبلغ قابل پرداخت</span>
+      <b>{{ tx.payable_now|money }}</b> <span class="tiny muted">تومان</span>
+      <div class="tiny muted">{{ a.code }} — {{ biz.name }}</div>
+    </div>
+    <div class="card-art">
+      <div>
+        <div class="tiny" style="opacity:.7">کارت شبیه‌سازی‌شده</div>
+        <div class="num" style="font-size:1.05rem;letter-spacing:.14em">۶۰۳۷ ۹۹۱۲ ۳۴۵۶ ۷۸۹۰</div>
+      </div>
+      <div class="chip"></div>
+    </div>
+    <dl class="kv" style="margin-bottom:14px">
+      <dt>خدمت</dt><dd>{{ svc.title }}</dd>
+      <dt>زمان نوبت</dt><dd>{{ a.date|jdate }} — ساعت {{ a.start_hm|fa }}</dd>
+      <dt>مدت سرویس</dt><dd>{{ svc.duration_min|dur }}</dd>
+      <dt>ماندهٔ قفل زمان</dt><dd><span class="countdown pulse" id="cd" data-left="{{ left }}">{{ left|fa }} دقیقه</span></dd>
+      {% if tx.amount != a.amount %}<dt>مبلغ کل سرویس</dt><dd>{{ a.amount|money }} تومان</dd>{% endif %}
+    </dl>
+
+    {% if prior %}
+    <div class="note" style="margin-bottom:12px">
+      <b>تاریخچهٔ تراکنش‌های این نوبت:</b>
+      <ul class="tiny" style="margin-top:6px">
+        {% for t in prior %}<li><span class="num">{{ t.reference }}</span> — {{ tx_label[t.status] }} {{ t.amount|money }} تومان</li>{% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    <form method="post" class="stack" style="gap:10px" id="payform">
+    {{ csrf() }}
+      <input type="hidden" name="next" value="{{ nxt }}">
+      <button class="btn btn-lg btn-block" type="submit" name="outcome" value="success">
+        {{ ic('check', 18) }} پرداخت موفق (تست)</button>
+      <div class="row" style="gap:10px">
+        <button class="btn btn-ghost grow" type="submit" name="outcome" value="failed">شبیه‌سازی پرداخت ناموفق</button>
+        <button class="btn btn-danger grow" type="submit" name="outcome" value="cancelled">انصراف از پرداخت</button>
+      </div>
+    </form>
+    <p class="msg warn small" id="expired" hidden style="margin-top:12px">
+      {{ ic('bolt', 15) }} مهلت قفل این ساعت تمام شد؛ در سرویس هم همین نوبت قطعی نمی‌شود.
+      به صفحهٔ رزرو برگردید و ساعت تازه‌ای انتخاب کنید.</p>
+    <p class="tiny muted center" style="margin-top:12px">
+      در حالت ناموفق یا انصراف، نوبتی ایجاد نمی‌شود و زمان آزاد می‌گردد.
+    </p>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+  <script src="{{ asset('js/gateway.js') }}" defer></script>
+{% endblock %}

@@ -1,0 +1,70 @@
+[Unit]
+Description=Nobatin booking system (gunicorn)
+Documentation=file:///srv/nobatin/deploy/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+# Type=exec: gunicorn خودِ پروتکل systemd-notify را پیاده نمی‌کند؛ با «exec»
+# systemd فقط موفقیتِ exec را منتظر می‌ماند و بعد سرویس را «بالا» می‌شمارد.
+Type=exec
+User=nobatin
+Group=nobatin
+WorkingDirectory=/srv/nobatin
+# همهٔ تنظیمات (کلید نشست، دامنهٔ مجاز، پیامک، سقف‌های نرخ) در این فایل است
+EnvironmentFile=/srv/nobatin/.env
+Environment=NOBATIN_ENV=production
+Environment=NOBATIN_BEHIND_PROXY=1
+Environment=NOBATIN_LOG_FILE=/var/log/nobatin/app.log
+# با ProtectSystem=strict پوشهٔ پروژه فقط‌خواندنی است؛ پایتون هم خودش نداند
+# (وگرنه هر بار پیام «read-only filesystem» برای __pycache__ می‌نویسد)
+Environment=PYTHONDONTWRITEBYTECODE=1
+
+# gunicorn: سه worker (هر کدام چند ترد) روی سوکت لوکال؛ nginx جلوی آن است.
+# `-k gthread` + `--threads 4` برای SQLite بهترین ترکیب است: ترد‌ها نوشتن‌ها را
+# با قفل WAL هم‌زمان نگه می‌دارند و workerها فقط خواندن‌ها را پخش می‌کنند.
+ExecStart=/srv/nobatin/.venv/bin/gunicorn \
+    --worker-class gthread --workers 3 --threads 4 \
+    --bind 127.0.0.1:8000 \
+    --timeout 30 --graceful-timeout 30 \
+    --keep-alive 5 \
+    --access-logfile - --error-logfile - \
+    --capture-output \
+    'app:create_app()'
+
+Restart=always
+RestartSec=3
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+# سخت‌سازی واحد: ریشه فقط خواندنی، /tmp خصوصی، بدون exec از /tmp
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/srv/nobatin/instance /var/log/nobatin
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=false
+SystemCallFilter=@system-service
+SystemCallArchitectures=native
+UMask=0077
+# افزوده‌های کم‌ریسک: هیچ ماژول کرنل بارگذاری نشود، لاگ کرنل خوانده نشود،
+# هیچ ساعت/نام میزبانی از داخل واحد عوض نشود، و SUID/realtime ممنوع.
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectClock=true
+ProtectHostname=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+# هر worker چند سوکت به SQLite + nginx + درگاه پیامک دارد؛ سقف پیش‌فرض
+# (1024) با سه worker و چهار ترد زود پر می‌شود و خطای «too many open files»
+# دقیقاً همان چیزی است که زیر بار اول دیده می‌شود.
+LimitNOFILE=8192
+
+[Install]
+WantedBy=multi-user.target

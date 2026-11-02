@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% from "macros/ui.html" import ic, policy_list %}
+{% block title %}{{ title }} — نوبتین{% endblock %}
+{% block content %}
+<div class="section" style="max-width:880px">
+  <span class="eyebrow">{{ ic('shield', 13) }} نوبتین</span>
+  <h1>{{ title }}</h1>
+
+  {% if kind == 'about' %}
+  <div class="grid g-2" style="align-items:start">
+    <div class="card stack">
+      <p>نوبتین سامانهٔ مستقل جست‌وجو، رزرو و پرداخت آنلاین نوبت است. هدف: کمتر تلفن زدن، کمتر معطل ماندن، و یک رکورد قابل پیگیری برای هر نوبت و هر تومان.</p>
+      <h3>چهار قول ساده</h3>
+      <ul class="stack small" style="gap:10px">
+        <li>{{ ic('check', 15) }} <b>هیچ زمانی دوباره فروخته نمی‌شود.</b> هنگام انتخاب، زمان در سبد شما قفل می‌شود و در لحظهٔ قطعی‌شدن یک بار دیگر بررسی می‌گردد.</li>
+        <li>{{ ic('check', 15) }} <b>پرداخت ناموفق = نوبت قطعی نه.</b> تراکنش، نوبت و بازپرداخت سه رکورد جدا هستند و هرکدام قابل پیگیری‌اند.</li>
+        <li>{{ ic('check', 15) }} <b>قوانین کنسلی شفاف است.</b> هر کسب‌وکار قوانین خودش را دارد و در لحظهٔ رزرو روی نوبت شما ثبت می‌شود.</li>
+        <li>{{ ic('check', 15) }} <b>دادهٔ هر کسب‌وکار از دیگری جداست.</b> خدمات، تقویم، مالی و پیامک‌ها در محدودهٔ همان مجموعه می‌مانند.</li>
+      </ul>
+    </div>
+    <div class="stack">
+      <div class="card"><h3>{{ ic('search', 16) }} جست‌وجو</h3>
+        <p class="small muted">استان، شهر، حوزهٔ کاری و نوع خدمت؛ مرتب‌سازی بر اساس امتیاز، قیمت یا محبوبیت.</p></div>
+      <div class="card"><h3>{{ ic('cal', 16) }} تقویم شمسی</h3>
+        <p class="small muted">نمایش تعداد زمان‌های آزاد هر روز و انتخاب ساعت، متناسب با ساعات کاری و مرخصی‌های مجموعه.</p></div>
+      <div class="card"><h3>{{ ic('wallet', 16) }} مالی مستقل</h3>
+        <p class="small muted">پرداخت کامل یا پیش‌پرداخت، گزارش تراکنش‌ها، درخواست‌های بازپرداخت و تسویهٔ کسب‌وکارها.</p></div>
+    </div>
+  </div>
+
+  {% elif kind == 'terms' %}
+  <div class="stack">
+    <div class="card">
+      <h3>رزرو و قطعی‌شدن</h3>
+      <ul class="small stack" style="gap:8px">
+        <li>پس از انتخاب زمان، یک سبد موقت (پیش‌فرض ۱۰ دقیقه) روی آن زمان قفل می‌شود.</li>
+        <li>نوبت تنها وقتی «تأییدشده» می‌شود که تراکنش پرداخت با موفقیت تأیید شده باشد.</li>
+        <li>اگر مهلت پرداخت تمام شود یا پرداخت ناموفق باشد، زمان به تقویم بازمی‌گردد و رکورد تراکنش به‌صورت «ناموفق» می‌ماند.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>کنسلی و بازپرداخت</h3>
+      <p class="small muted">مانند نمونه: اگر کنسلی تا ۲۴ ساعت پیش از نوبت اعلام شود، ۵۰٪ هزینه بازگردانده می‌شود. حدود قوانین:</p>
+      {{ policy_list([{'min_hours': 48, 'refund_percent': 100}, {'min_hours': 24, 'refund_percent': 50}, {'min_hours': 0, 'refund_percent': 0}]) }}
+      <p class="hint">قوانین هر کسب‌وکار می‌تواند متفاوت باشد و همان قوانین در لحظهٔ رزرو برای شما ثبت (snapshot) می‌شود؛ تغییر بعدی قوانین، نوبت‌های قبلی را تغییر نمی‌دهد.</p>
+    </div>
+    <div class="card">
+      <h3>حریم خصوصی و جدا بودن داده‌ها</h3>
+      <p class="small muted">اطلاعات تماس مشتری فقط به کسب‌وکاری که از آن نوبت گرفته‌اند نمایش داده می‌شود. تراکنش‌ها و بازپرداخت‌ها در جدول‌های جدا و مستقل از نوبت ثبت می‌شوند تا قابل ممیزی باشند.</p>
+    </div>
+  </div>
+
+  {% elif kind == 'brand' %}
+  <div class="stack">
+    <div class="card">
+      <h3>نام و نشان</h3>
+      <div class="row" style="gap:16px">
+        <svg width="64" height="64" viewBox="0 0 40 40"><use href="{{ url_for('static', filename='img/sprite.svg') }}#i-logo"></use></svg>
+        <div>
+          <div class="brand" style="font-size:1.6rem">نوبت<b>ین</b></div>
+          <p class="tiny muted" style="margin:0">نشان: عقربهٔ ساعت روی کارت تیره، با نقطهٔ زعفرانی — «زمانِ تو، رزروشده».</p>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>پالت رنگ</h3>
+      <div class="grid g-4" style="gap:10px">
+        {% for name, hex in [('سرمه جوهر', '#101a2c'), ('زمرد', '#12b39a'), ('زعفران', '#f4a52a'),
+                             ('انار', '#d9436a'), ('آسمانی', '#2f7fd1'), ('کاغذ', '#f6f3ec')] %}
+        <div>
+          <div style="height:52px;border-radius:14px;background:{{ hex }};border:1px solid var(--line-2)"></div>
+          <div class="tiny strong">{{ name }}</div><div class="tiny muted num">{{ hex }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="card">
+      <h3>امضای بصری: بلیت نوبت</h3>
+      <p class="small muted">هر نوبت مانند یک بلیت کاغذی با لبهٔ پرفراژ و رنگ اختصاصی کسب‌وکار نمایش داده می‌شود؛ ساعت بزرگ، تاریخ شمسی و کد پیگیری در انتها.</p>
+      <div class="ticket" style="--biz-hue:205;max-width:420px">
+        <span class="stub"></span>
+        <div class="ticket-head"><div><h3>نمونهٔ بلیت</h3><span class="small muted">کلینیک نمونه</span></div>
+          <span class="badge jade">تأییدشده</span></div>
+        <div class="when"><div class="big">۱۴:۳۰<small>دوشنبه ۲۲ مهر ۱۴۰۵</small></div>
+          <dl class="kv grow"><dt>مدت</dt><dd>۱ ساعت</dd><dt>پرداخت</dt><dd>کامل آنلاین</dd></dl></div>
+        <div class="perforated"></div>
+        <div class="ticket-foot"><span class="code">NB-000000</span><span class="tiny muted">پیامک تأیید ارسال شد</span></div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

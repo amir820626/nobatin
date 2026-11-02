@@ -1,0 +1,500 @@
+{% extends "base.html" %}
+{% from "macros/ui.html" import ic, status_badge, kpi, empty, bizcard %}
+{% block title %}پنل مدیریت — نوبتین{% endblock %}
+{% block content %}
+<div class="shell" style="margin-top:22px">
+  <nav class="side">
+    <span class="grp">مدیریت سامانه</span>
+    {% for key, label, icon in tabs %}
+    <a href="{{ url_for('admin.panel', tab=key) }}" class="{{ 'on' if tab == key }}">{{ ic(icon, 16) }} {{ label }}</a>
+    {% endfor %}
+    <span class="grp">میان‌بر</span>
+    <a href="{{ url_for('public.home') }}">{{ ic('sparkle', 16) }} نمای کاربر سایت</a>
+    <a href="{{ url_for('auth.logout') }}">{{ ic('x', 16) }} خروج</a>
+  </nav>
+
+  <div class="stack">
+    <div class="row-between">
+      <div><span class="eyebrow">{{ ic('gear', 13) }} نوبتین · مدیریت</span>
+        <h1 style="margin:0">{% for key, label, icon in tabs %}{% if key == tab %}{{ label }}{% endif %}{% endfor %}</h1></div>
+      <span class="badge ink">{{ jtoday.year|fa }}/{{ jtoday.month|fa }}/{{ jtoday.day|fa }}</span>
+    </div>
+
+    <div class="kpi">
+      {{ kpi(stats.users, 'کاربر') }}
+      {{ kpi(stats.biz, 'کسب‌وکار فعال') }}
+      {{ kpi(stats.pending, 'در انتظار تأیید', 'amber' if stats.pending) }}
+      {{ kpi(stats.appts, 'همهٔ نوبت‌ها') }}
+      {{ kpi(stats.confirmed, 'نوبت قطعی') }}
+      {{ kpi(stats.today, 'نوبت امروز') }}
+    </div>
+
+    {% if tab == 'overview' %}
+    <div class="grid g-2">
+      <div class="card">
+        <h3>{{ ic('chart', 16) }} {{ days|length|fa }} روز اخیر</h3>
+        <div class="bars-box"><div class="bars">
+            {% set mx = days|map(attribute='n')|max or 1 %}
+            {% for d in days %}
+            <div class="b" style="height:{{ (d.n / mx * 100)|round }}%" title="{{ d.iso }} — {{ d.n|fa }} نوبت، {{ d.ok|fa }} قطعی">
+              <span>{{ d.day }}</span></div>
+            {% endfor %}
+        </div></div>
+      </div>
+      <div class="card stack">
+        <h3>{{ ic('wallet', 16) }} خلاصهٔ مالی</h3>
+        <div class="bar-row"><span>فروش موفق</span><span class="bar-track"><span class="bar-fill" style="width:100%"></span></span><span class="money">{{ finance.gross|money }}</span></div>
+        {% set mx = finance.gross or 1 %}
+        <div class="bar-row"><span>بازپرداخت‌ها</span><span class="bar-track"><span class="bar-fill" style="width:{{ (finance.refunded / mx * 100)|round }}%;background:var(--berry)"></span></span><span class="money">{{ finance.refunded|money }}</span></div>
+        <div class="bar-row"><span>کمیسیون پلتفرم</span><span class="bar-track"><span class="bar-fill" style="width:{{ (finance.commission / mx * 100)|round }}%;background:var(--saffron)"></span></span><span class="money">{{ finance.commission|money }}</span></div>
+        <div class="bar-row"><span>پرداخت‌شده به کسب‌وکارها</span><span class="bar-track"><span class="bar-fill" style="width:{{ (finance.settled / mx * 100)|round }}%;background:var(--sky)"></span></span><span class="money">{{ finance.settled|money }}</span></div>
+        <hr class="thin">
+        <div class="row-between small"><span>ماندهٔ قابل تسویهٔ کسب‌وکارها</span><b class="money">{{ finance.payable_business|money }} تومان</b></div>
+        <div class="row-between small"><span>در انتظار بازپرداخت</span><b class="money">{{ finance.pending_ref|money }} تومان</b></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>{{ ic('ticket', 16) }} تازه‌ترین نوبت‌ها</h3>
+      <div class="table-wrap" style="margin-top:10px">
+        <table class="t">
+          <thead><tr><th>کد</th><th>کسب‌وکار</th><th>خدمت</th><th>زمان</th><th>مبلغ</th><th>وضعیت</th></tr></thead>
+          <tbody>{% for a in recent %}
+            <tr><td class="num">{{ a.code }}</td>
+              <td><a class="link" href="{{ url_for('public.business_page', slug=a.slug) }}">{{ a.biz }}</a></td>
+              <td>{{ a.svc }}</td><td class="num small">{{ a.date|jdate }} — {{ a.start_hm|fa }}</td>
+              <td class="money tiny">{{ a.payable_now|money }}</td><td>{{ status_badge(a.status) }}</td></tr>
+          {% endfor %}</tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>{{ ic('bolt', 16) }} وضعیت پرداخت‌ها</h3>
+      <div class="kpi" style="margin-top:10px">
+        {{ kpi(finance.success, 'تراکنش موفق', 'jade') }}
+        {{ kpi(finance.failed, 'ناموفق یا لغوشده', 'berry') }}
+        {{ kpi(finance.created, 'در جریان (سبد باز)', 'amber') }}
+        {{ kpi(finance.appt_pending, 'نوبت بی‌پرداخت', 'amber') }}
+        {{ kpi(finance.appt_cancel, 'نوبت لغوشده') }}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if tab == 'businesses' %}
+    <div class="card">
+      <div class="row-between"><h3>{{ ic('shop', 16) }} کسب‌وکارها ({{ rows|length|fa }})</h3>
+        <div class="row" style="gap:6px">
+          {% for s, l in [('', 'همه'), ('pending', 'در انتظار'), ('active', 'تأییدشده'), ('suspended', 'معلق')] %}
+          <a class="chip {{ 'on' if request.args.get('status','') == s }}" href="{{ url_for('admin.panel', tab='businesses', status=s) }}">{{ l }}</a>
+          {% endfor %}
+        </div></div>
+      <div class="table-wrap" style="margin-top:12px">
+        <table class="t">
+          <thead><tr><th>کسب‌وکار</th><th>دسته / شهر</th><th>مالک</th><th>نوبت</th><th>فروش</th><th>کمیسیون</th><th>وضعیت</th><th>عملیات</th></tr></thead>
+          <tbody>
+            {% for b in rows %}
+            <tr style="--biz-hue:{{ b.hue }}">
+              <td><div class="row" style="gap:8px"><span class="biz-logo num" style="width:34px;height:34px;border-radius:11px;font-size:.8rem">{{ b.initials }}</span>
+                <span><a class="link strong" href="{{ url_for('public.business_page', slug=b.slug) }}">{{ b.name }}</a>
+                  <div class="tiny muted">/{{ b.slug }} · {{ b.svc_n|fa }} خدمت</div></span></div></td>
+              <td class="small">{{ b.cat_title }}<div class="tiny muted">{{ b.city_name }}، {{ b.prov_name }}</div></td>
+              <td class="small">{{ b.owner_name }}<div class="tiny muted num">{{ b.owner_mobile }}</div></td>
+              <td class="num">{{ b.sold|fa }}</td>
+              <td class="money tiny">{{ b.bal.gross|money }}</td>
+              <td class="num small">{{ b.commission_percent|fa }}%</td>
+              <td>{{ status_badge(b.status) }}</td>
+              <td>
+                <div class="row" style="gap:5px">
+                  {% if b.status != 'active' %}
+                  <form method="post" action="{{ url_for('admin.biz_action', bid=b.id, action='active') }}">
+                  {{ csrf() }}
+                    <button class="btn btn-sm" type="submit">تأیید</button></form>
+                  {% endif %}
+                  {% if b.status != 'suspended' %}
+                  <form method="post" action="{{ url_for('admin.biz_action', bid=b.id, action='suspended') }}">
+                  {{ csrf() }}
+                    <button class="btn btn-ghost btn-sm" type="submit">تعلیق</button></form>
+                  {% endif %}
+                  <form method="post" action="{{ url_for('admin.biz_action', bid=b.id, action='commission') }}" class="row" style="gap:4px">
+                  {{ csrf() }}
+                    <input class="input num" style="width:62px;padding:5px 8px" name="value" value="{{ b.commission_percent }}" inputmode="decimal">
+                    <button class="btn btn-ghost btn-sm" type="submit">٪</button></form>
+                </div>
+                <div class="tiny muted" style="margin-top:4px">طلب: {{ b.bal.receivable|money }} تومان</div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if tab == 'users' %}
+    <div class="card">
+      <div class="row-between"><h3>{{ ic('users', 16) }} کاربران ({{ rows|length|fa }})</h3>
+        <div class="row" style="gap:6px">
+          {% for r, l in [('', 'همه'), ('customer', 'مشتری'), ('business', 'کسب‌وکار'), ('admin', 'مدیر')] %}
+          <a class="chip {{ 'on' if request.args.get('role','') == r }}" href="{{ url_for('admin.panel', tab='users', role=r) }}">{{ l }}</a>
+          {% endfor %}
+        </div></div>
+      <div class="table-wrap" style="margin-top:12px">
+        <table class="t">
+          <thead><tr><th>موبایل</th><th>نام</th><th>نقش</th><th>نوبت</th><th>کسب‌وکار</th><th>آخرین</th><th>وضعیت</th><th>عملیات</th></tr></thead>
+          <tbody>{% for u in rows %}
+            <tr><td class="num">{{ u.mobile }}</td><td>{{ u.name or '—' }}</td>
+              <td class="small">{{ {'customer':'مشتری','business':'کسب‌وکار','admin':'مدیر'}[u.role] }}</td>
+              <td class="num">{{ u.n|fa }}</td><td class="num">{{ u.biz_n|fa }}</td>
+              <td class="tiny num">{{ u.last or '—' }}</td>
+              <td>{{ status_badge('active' if u.is_active else 'suspended') }}</td>
+              <td><div class="row" style="gap:5px">
+                <form method="post" action="{{ url_for('admin.user_action', uid=u.id, action='toggle') }}">
+                {{ csrf() }}
+                  <button class="btn btn-ghost btn-sm" type="submit">{{ 'غیرفعال' if u.is_active else 'فعال' }}</button></form>
+                <form method="post" action="{{ url_for('admin.user_action', uid=u.id, action=('customer' if u.role != 'customer' else 'business')) }}" class="row" style="gap:4px">
+                {{ csrf() }}
+                  <select class="input" style="width:110px;padding:5px 8px" name="role">
+                    <option value="customer">مشتری</option><option value="business">کسب‌وکار</option><option value="admin">مدیر</option></select>
+                  <button class="btn btn-sm" type="submit">تغییر نقش</button></form>
+              </div></td></tr>
+          {% endfor %}</tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if tab == 'cats' %}
+    <div class="grid g-2">
+      <div class="card">
+        <h3>{{ ic('grid', 16) }} دسته‌بندی‌ها</h3>
+        <div class="stack" style="gap:9px;margin-top:10px">
+          {% for c in cats %}
+          <form method="post" action="{{ url_for('admin.save_category') }}" class="card-flat">
+          {{ csrf() }}
+            <input type="hidden" name="id" value="{{ c.id }}">
+            <div class="row" style="gap:8px">
+              <span class="cat-ic" style="width:38px;height:38px;border-radius:12px">{{ ic(c.icon, 18) }}</span>
+              <input class="input grow" name="title" value="{{ c.title }}">
+              <select class="input" name="icon" style="width:120px">
+                {% for i in ['scissors','pulse','car','leaf','cap','home','sparkle','grid','shop','bolt'] %}
+                <option value="{{ i }}" {{ 'selected' if c.icon == i }}>{{ i }}</option>{% endfor %}</select>
+            </div>
+            <div class="row" style="gap:8px;margin-top:8px">
+              <input class="input grow" name="blurb" value="{{ c.blurb }}" placeholder="توضیح کوتاه">
+              <input class="input num" name="sort" value="{{ c.sort }}" style="width:74px" inputmode="numeric">
+              <label class="check"><input type="checkbox" name="is_active" {{ 'checked' if c.is_active }}> فعال</label>
+              <button class="btn btn-sm" type="submit">ذخیره</button>
+              <button class="btn btn-ghost btn-sm" type="submit" name="delete" value="1"
+                      data-confirm="غیرفعال شدن این دسته؟">غیرفعال</button>
+            </div>
+            <div class="tiny muted" style="margin-top:6px">{{ c.n|fa }} کسب‌وکار · {{ c.svc|fa }} خدمت</div>
+          </form>
+          {% endfor %}
+        </div>
+        <form method="post" action="{{ url_for('admin.save_category') }}" class="row" style="gap:8px;margin-top:12px">
+        {{ csrf() }}
+          <input class="input grow" name="title" placeholder="دستهٔ تازه" required>
+          <input class="input" name="blurb" placeholder="توضیح کوتاه">
+          <button class="btn btn-sm" type="submit">افزودن</button>
+        </form>
+      </div>
+      <div class="stack">
+        <div class="card">
+          <h3>{{ ic('pin', 16) }} استان‌ها</h3>
+          <ul class="stack" style="gap:7px;margin-top:8px">
+            {% for p in provs %}<li class="row-between small"><span>{{ p.name }}</span>
+              <span class="tiny muted">{{ p.nc|fa }} شهر · {{ p.nb|fa }} کسب‌وکار</span></li>{% endfor %}
+          </ul>
+          <form method="post" action="{{ url_for('admin.save_location') }}" class="row" style="gap:8px;margin-top:10px">
+          {{ csrf() }}
+            <input type="hidden" name="kind" value="province">
+            <input class="input grow" name="name" placeholder="استان تازه" required>
+            <button class="btn btn-sm" type="submit">افزودن</button></form>
+        </div>
+        <div class="card">
+          <h3>{{ ic('pin', 16) }} شهرها</h3>
+          <div class="table-wrap" style="margin-top:8px">
+            <table class="t" style="min-width:auto">
+              <thead><tr><th>شهر</th><th>استان</th><th>کسب‌وکار</th></tr></thead>
+              <tbody>{% for c in cities %}<tr><td>{{ c.name }}</td><td class="small">{{ c.prov }}</td>
+                <td class="num">{{ c.nb|fa }}</td></tr>{% endfor %}</tbody>
+            </table>
+          </div>
+          <form method="post" action="{{ url_for('admin.save_location') }}" class="row" style="gap:8px;margin-top:10px">
+          {{ csrf() }}
+            <input type="hidden" name="kind" value="city">
+            <select class="input" name="province" required style="width:150px">
+              {% for p in provs %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}</select>
+            <input class="input grow" name="name" placeholder="نام شهر" required>
+            <button class="btn btn-sm" type="submit">افزودن</button></form>
+        </div>
+        <div class="card">
+          <h3>{{ ic('pin', 16) }} محله‌ها <span class="tiny muted">(نام‌های یک‌شکل خودکار ادغام می‌شوند)</span></h3>
+          {% if districts %}
+          <div class="stack" style="gap:8px;margin-top:8px">
+            {% for d in districts %}
+            <form method="post" action="{{ url_for('admin.district_action', did=d.id, action='rename') }}"
+                  class="card-flat row" style="gap:7px;align-items:center">
+              {{ csrf() }}
+              <input class="input grow" name="name" value="{{ d.name }}" aria-label="نام محله">
+              <span class="tiny muted" style="white-space:nowrap">{{ d.city }} · {{ d.nb|fa }} کسب‌وکار</span>
+              <button class="btn btn-sm" type="submit">ذخیره</button>
+              {% if d.nb %}
+              <select class="input" name="into" style="width:130px" aria-label="محلهٔ مقصد">
+                {% for o in districts if o.city_id == d.city_id and o.id != d.id %}
+                <option value="{{ o.id }}">ادغام در {{ o.name }}</option>{% endfor %}
+              </select>
+              <button class="btn btn-ghost btn-sm" type="submit" formaction="{{ url_for('admin.district_action', did=d.id, action='merge') }}"
+                      data-confirm="این محله در محلهٔ مقصد ادغام شود؟">ادغام</button>
+              {% else %}
+              <button class="btn btn-ghost btn-sm" type="submit" formaction="{{ url_for('admin.district_action', did=d.id, action='delete') }}"
+                      data-confirm="حذف این محله؟">حذف</button>
+              {% endif %}
+            </form>
+            {% endfor %}
+          </div>
+          {% else %}
+          <p class="tiny muted" style="margin-top:8px">هنوز محله‌ای ثبت نشده؛ مالک‌ها می‌توانند محلهٔ مجموعهٔ خود را وارد کنند.</p>
+          {% endif %}
+          <form method="post" action="{{ url_for('admin.save_location') }}" class="row" style="gap:8px;margin-top:10px">
+          {{ csrf() }}
+            <input type="hidden" name="kind" value="district">
+            <select class="input" name="city" required style="width:150px">
+              {% for c in cities %}<option value="{{ c.id }}">{{ c.name }} ({{ c.prov }})</option>{% endfor %}</select>
+            <input class="input grow" name="name" placeholder="نام محله" required>
+            <button class="btn btn-sm" type="submit">افزودن</button></form>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if tab == 'money' %}
+    <div class="kpi">
+      {{ kpi(finance.gross|money, 'کل فروش موفق (تومان)') }}
+      {{ kpi(finance.commission|money, 'کمیسیون نوبتین') }}
+      {{ kpi(finance.payable_business|money, 'قابل تسویه') }}
+      {{ kpi(finance.refunded|money, 'بازپرداخت‌شده', 'berry') }}
+      {{ kpi(finance.pending_ref|money, 'بازپرداخت در جریان', 'amber') }}
+    </div>
+
+    <div class="card">
+      <h3>{{ ic('wallet', 16) }} ماندهٔ کسب‌وکارها و تسویه</h3>
+      <div class="table-wrap" style="margin-top:10px">
+        <table class="t">
+          <thead><tr><th>کسب‌وکار</th><th>فروش</th><th>بازپرداخت</th><th>کمیسیون</th><th>تسویه‌شده</th><th>مانده</th><th>عملیات</th></tr></thead>
+          <tbody>{% for x in balances %}
+            <tr style="--biz-hue:{{ x.biz.hue }}"><td><div class="row" style="gap:8px">
+              <span class="biz-logo" style="width:30px;height:30px;border-radius:10px;font-size:.72rem">{{ x.biz.initials }}</span>
+              <a class="link" href="{{ url_for('public.business_page', slug=x.biz.slug) }}">{{ x.biz.name }}</a></div></td>
+              <td class="money tiny">{{ x.bal.gross|money }}</td>
+              <td class="tiny">{{ x.bal.refunds|money }}</td>
+              <td class="tiny">{{ x.bal.platform_fee|money }}</td>
+              <td class="tiny">{{ x.bal.paid_out|money }}</td>
+              <td class="money">{{ x.bal.receivable|money }}</td>
+              <td><form method="post" action="{{ url_for('admin.create_settlement', bid=x.biz.id) }}" class="row" style="gap:5px">
+              {{ csrf() }}
+                <input class="input num" style="width:110px;padding:5px 8px" name="amount" value="{{ x.bal.receivable }}" inputmode="numeric">
+                <button class="btn btn-sm" type="submit" {{ 'disabled' if x.bal.receivable <= 0 }}>ثبت تسویه</button></form></td></tr>
+          {% endfor %}</tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="grid g-2">
+      <div class="card">
+        <h3>{{ ic('ticket', 16) }} تراکنش‌ها</h3>
+        <div class="table-wrap" style="margin-top:10px;max-height:420px;overflow:auto">
+          <table class="t">
+            <thead><tr><th>مرجع</th><th>نوع</th><th>مبلغ</th><th>وضعیت</th><th>زمان</th></tr></thead>
+            <tbody>{% for t in txs %}
+              <tr><td class="tiny num">{{ t.reference }}</td>
+                <td class="tiny">{{ tx_kind.get(t.kind, t.kind) }}</td>
+                <td class="money tiny">{{ t.amount|money }}</td>
+                <td>{{ status_badge(t.status) }}</td>
+                <td class="tiny num">{{ t.created_at[5:16] }}</td></tr>
+            {% else %}<tr><td colspan="5" class="center muted">—</td></tr>{% endfor %}</tbody>
+          </table>
+        </div>
+      </div>
+      <div class="stack">
+        <div class="card">
+          <h3>{{ ic('shield', 16) }} درخواست‌های بازپرداخت</h3>
+          <div class="stack" style="gap:9px;margin-top:8px">
+            {% for r in refunds %}
+            <div class="card-flat small">
+              <div class="row-between"><span class="num strong">{{ r.code }}</span><span class="money">{{ r.amount|money }}</span></div>
+              <div class="tiny muted">{{ r.rule_label }} — {{ status_badge(r.status) }}</div>
+              {% if r.status == 'pending' %}
+              <div class="row" style="gap:6px;margin-top:6px">
+                <form method="post" action="{{ url_for('admin.refund_action', rid=r.id, action='done') }}">
+                {{ csrf() }}
+                  <button class="btn btn-sm" type="submit">انجام شد</button></form>
+                <form method="post" action="{{ url_for('admin.refund_action', rid=r.id, action='reject') }}">
+                {{ csrf() }}
+                  <button class="btn btn-ghost btn-sm" type="submit">رد</button></form>
+              </div>{% endif %}
+            </div>
+            {% else %}<p class="small muted">درخواستی ثبت نشده است.</p>{% endfor %}
+          </div>
+        </div>
+        <div class="card">
+          <h3>{{ ic('wallet', 16) }} تسویه‌ها</h3>
+          <div class="table-wrap" style="margin-top:8px">
+            <table class="t" style="min-width:auto">
+              <thead><tr><th>کسب‌وکار</th><th>مبلغ</th><th>بازه</th><th>وضعیت</th><th></th></tr></thead>
+              <tbody>{% for s in settle %}
+                <tr><td class="small">{{ s.biz }}</td><td class="money tiny">{{ s.amount|money }}</td>
+                  <td class="tiny num">{{ s.period_from }}→{{ s.period_to }}</td>
+                  <td>{{ status_badge(s.status) }}</td>
+                  <td>{% if s.status == 'pending' %}
+                    <form method="post" action="{{ url_for('admin.settlement_action', sid=s.id, action='pay') }}">
+                    {{ csrf() }}
+                      <button class="btn btn-sm" type="submit">پرداخت</button></form>{% endif %}</td></tr>
+              {% else %}<tr><td colspan="5" class="center muted">—</td></tr>{% endfor %}</tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if tab == 'appointments' %}
+    <div class="card">
+      <div class="row-between"><h3>{{ ic('cal', 16) }} همهٔ نوبت‌ها</h3>
+        <form class="row" style="gap:6px">
+          <input type="hidden" name="tab" value="appointments">
+          <input class="input" type="date" name="from" value="{{ frm }}" style="width:150px">
+          <input class="input" type="date" name="to" value="{{ to }}" style="width:150px">
+          <select class="input" name="status" style="width:150px">
+            <option value="">همهٔ وضعیت‌ها</option>
+            {% for k, l in appt_status_label.items() %}<option value="{{ k }}" {{ 'selected' if status == k }}>{{ l }}</option>{% endfor %}
+          </select>
+          <button class="btn btn-sm" type="submit">فیلتر</button>
+        </form></div>
+      <div class="table-wrap" style="margin-top:12px">
+        <table class="t">
+          <thead><tr><th>کد</th><th>کسب‌وکار</th><th>خدمت</th><th>مشتری</th><th>زمان</th><th>پرداخت</th><th>وضعیت</th></tr></thead>
+          <tbody>{% for a in rows %}
+            <tr><td class="num tiny">{{ a.code }}</td>
+              <td class="small"><a class="link" href="{{ url_for('public.business_page', slug=a.slug) }}">{{ a.biz }}</a></td>
+              <td class="small">{{ a.svc }}</td>
+              <td class="tiny num">{{ a.mobile }}</td>
+              <td class="num small">{{ a.date }} — {{ a.start_hm }}</td>
+              <td class="tiny">{{ pay_status_label[a.pay_status] }}</td>
+              <td>{{ status_badge(a.status) }}</td></tr>
+          {% else %}<tr><td colspan="7" class="center muted">موردی در این بازه نیست.</td></tr>{% endfor %}</tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if tab == 'sms' %}
+    <div class="grid g-2">
+      <div class="card">
+        <h3>{{ ic('chat', 16) }} پیامک‌های ارسالی ({{ sms|length|fa }})</h3>
+        {% if sms_bad %}<p class="small" style="color:#96601a;margin-top:6px">
+          {{ ic('bolt', 14) }}
+          {% for b in sms_bad %}{{ b.n|fa }} پیامک {{ 'به‌دلیل شمارهٔ ثابت/نامعتبر' if b.status=='skipped' else 'ارسالش ناموفق' }} بود.
+          {% endfor %}</p>{% endif %}
+        <div class="stack" style="gap:9px;margin-top:10px;max-height:520px;overflow:auto">
+          {% for s in sms %}
+          <div class="card-flat tiny"><div class="row-between">
+            <span class="num strong">{{ s.mobile }}</span><span class="muted">{{ s.created_at|jdatetime }}</span></div>
+            <div>{{ s.body }}</div>
+            <div class="row" style="gap:6px;margin-top:4px"><span class="badge ink">{{ s.template }}</span>
+              {{ status_badge(s.status) }}</div></div>
+          {% else %}<p class="small muted">پیامکی ثبت نشده.</p>{% endfor %}
+        </div>
+      </div>
+      <div class="stack">
+        <div class="card">
+          <h3>ارسال پیامک آزمایشی</h3>
+          <form method="post" action="{{ url_for('admin.send_test_sms') }}" class="stack" style="gap:10px">
+          {{ csrf() }}
+            <div class="field" style="margin:0"><label>شماره</label>
+              <input class="input num" name="mobile" placeholder="0912..." required></div>
+            <div class="field" style="margin:0"><label>قالب</label>
+              <select class="input" name="template">
+                {% for t in ['booking_ok','reminder','cancelled','refund','new_booking','otp'] %}
+                <option value="{{ t }}">{{ t }}</option>{% endfor %}</select></div>
+            <button class="btn btn-sm" type="submit">ارسال در حالت توسعه</button></form>
+        </div>
+        <div class="card">
+          <h3>قالب‌ها</h3>
+          <div class="stack" style="gap:8px">
+            {% for b in by_tpl %}<div class="bar-row"><span class="small num">{{ b.template }}</span>
+              <span class="bar-track"><span class="bar-fill" style="width:{{ (b.n / (by_tpl|map(attribute='n')|max or 1) * 100)|round }}%"></span></span>
+              <span class="tiny">{{ b.n|fa }}</span></div>{% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if tab == 'log' %}
+    <div class="grid g-2">
+      <div class="card">
+        <h3>{{ ic('shield', 16) }} ردپای اقدامات</h3>
+        <p class="tiny muted" style="margin-top:6px">هر تغییر وضعیت کسب‌وکار، کاربر، تسویه، بازپرداخت،
+          تنظیمات و تأیید دستی نوبت اینجا ثبت می‌شود — تا اگر روزی اختلافی پیش آمد، روشن باشد چه‌کسی چه‌کاری کرد.</p>
+        {% if logs %}
+        <div class="table-wrap" style="margin-top:12px">
+          <table class="t" style="min-width:auto">
+            <thead><tr><th>زمان</th><th>کاربر</th><th>اقدام</th><th>موضوع</th><th>جزئیات</th></tr></thead>
+            <tbody>{% for l in logs %}
+              <tr><td class="tiny num">{{ l.created_at|jdatetime }}</td>
+                <td class="small">{{ l.who or 'سیستم' }}<div class="tiny muted">{{ l.role }}{% if l.mobile %} · {{ l.mobile }}{% endif %}</div></td>
+                <td><span class="badge ink">{{ l.action }}</span></td>
+                <td class="tiny num">{{ l.target }}</td>
+                <td class="tiny">{{ l.detail }}</td></tr>
+            {% endfor %}</tbody>
+          </table>
+        </div>
+        {% else %}
+          {{ empty('هنوز اقدامی ثبت نشده است.', 'shield', 'با اولین تغییر وضعیت در پنل، اینجا پر می‌شود.') }}
+        {% endif %}
+      </div>
+      <div class="card">
+        <h3>{{ ic('chart', 16) }} پرتکرارترین اقدام‌ها</h3>
+        <ul class="stack" style="gap:7px;margin-top:10px">
+          {% for k in log_kinds %}<li class="row-between small"><span class="badge ink">{{ k.action }}</span>
+            <span class="tiny muted">{{ k.n|fa }} بار</span></li>{% endfor %}
+        </ul>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if tab == 'settings' %}
+    <div class="grid g-2">
+      <div class="card">
+        <h3>{{ ic('gear', 16) }} تنظیمات کلی</h3>
+        <form method="post" action="{{ url_for('admin.save_settings') }}" class="stack" style="gap:10px">
+        {{ csrf() }}
+          <div class="field" style="margin:0"><label>نام سایت</label>
+            <input class="input" name="site_name" value="{{ settings.get('site_name','نوبتین') }}"></div>
+          <div class="field" style="margin:0"><label>کمیسیون پیش‌فرض پلتفرم (٪)</label>
+            <input class="input num" name="platform_fee_percent" value="{{ settings.get('platform_fee_percent','5') }}"></div>
+          <div class="field" style="margin:0"><label>ساعت یادآوری پیش از نوبت</label>
+            <input class="input num" name="reminder_hours" value="{{ settings.get('reminder_hours','12') }}"></div>
+          <div class="field" style="margin:0"><label>تلفن پشتیبانی</label>
+            <input class="input num" name="support_phone" value="{{ settings.get('support_phone','') }}"></div>
+          <button class="btn" type="submit">ذخیره</button>
+        </form>
+      </div>
+      <div class="card stack">
+        <h3>{{ ic('shield', 16) }} یادداشت فنی</h3>
+        <ul class="small stack" style="gap:8px;color:var(--ink-2)">
+          <li>{{ ic('check', 14) }} <b>ضد هم‌زمانی:</b> قفل سبد + یکتایی (کسب‌وکار، روز، ساعت) در دیتابیس. دو رزروی هم‌زمان روی یک زمان ممکن نیست.</li>
+          <li>{{ ic('check', 14) }} <b>پرداخت ناموفق:</b> تراکنش «ناموفق» ثبت و نوبت «منقضی» می‌شود؛ هیچ نوبت قطعی ساخته نمی‌شود.</li>
+          <li>{{ ic('check', 14) }} <b>استقلال مالی:</b> جداول appointments، transactions و refunds جدا هستند؛ لغو، تراکنش را پاک نمی‌کند.</li>
+          <li>{{ ic('check', 14) }} <b>جدا بودن داده‌ها:</b> هر کوئری پنل کسب‌وکار با business_id محدود می‌شود.</li>
+          <li>{{ ic('check', 14) }} <b>قوانین کنسلی:</b> به‌صورت snapshot روی هر نوبت ذخیره می‌شود.</li>
+        </ul>
+        <p class="tiny muted">برای پرداخت واقعی: فایل core/gateway.py را با سرویس واسط جایگزین کنید و در admin حالت callback را روی همان مسیرهای /gateway قرار دهید.</p>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

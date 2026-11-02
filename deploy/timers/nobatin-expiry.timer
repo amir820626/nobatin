@@ -1,0 +1,11 @@
+[Unit]
+Description=هر دو دقیقه: آزادکردن سبدها و نوبت‌های بی‌زمان
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=2min
+AccuracySec=30s
+RandomizedDelaySec=20
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% from "macros/ui.html" import ic %}
+{% block title %}ثبت کسب‌وکار در نوبتین{% endblock %}
+{% block content %}
+<div class="section" style="margin-top:22px;max-width:900px">
+  <span class="eyebrow">{{ ic('shop', 13) }} پذیرش مشتری</span>
+  <h1>کسب‌وکارت را در نوبتین بساز</h1>
+  <p class="muted small">پس از ثبت، صفحهٔ شما در حالت «در انتظار تأیید مدیر» است. خدمات و ساعات کاری را همین حالا می‌چینید تا از لحظهٔ تأیید، نوبت آنلاین بگیرید.</p>
+
+  <form method="post" action="{{ url_for('business.new_biz') }}" class="stack" data-city-cascade>
+  {{ csrf() }}
+    <section class="card">
+      <h2 style="font-size:1.1rem">{{ ic('sparkle', 16) }} شناسنامه</h2>
+      <div class="grid g-2">
+        <div class="field"><label>نام کسب‌وکار *</label>
+          <input class="input" name="name" maxlength="80" placeholder="مثلاً آرایشگاه بانوان آراسته" required></div>
+        <div class="field"><label>نشانی صفحه *</label>
+          <div class="row" style="gap:6px"><span class="tiny muted">nobatir.site/k/</span>
+            <input class="input" name="slug" placeholder="arasteh-beauty" maxlength="60"
+                   pattern="[a-z0-9][a-z0-9\-]{1,58}[a-z0-9]" required></div>
+          <span class="hint">حروف انگلیسی کوچک، عدد و خط تیره؛ ۳ تا ۶۰ نویسه. همین نشانی در اینترنت به مشتری داده می‌شود.</span></div>
+        <div class="field"><label>دستهٔ خدمات</label>
+          <select class="input" name="category">{% for c in cats %}<option value="{{ c.id }}">{{ c.title }}</option>{% endfor %}</select></div>
+        <div class="field"><label>شهر / استان</label>
+          <div class="row" style="gap:8px">
+            <select class="input" name="province" id="prov">
+              <option value="">انتخاب استان</option>
+              {% for p in provinces %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}
+            </select>
+            <select class="input" name="city" id="city">
+              <option value="">انتخاب شهر</option>
+              {% for c in cities %}<option value="{{ c.id }}" data-p="{{ c.prov }}">{{ c.name }}</option>{% endfor %}
+            </select>
+          </div></div>
+        <div class="field"><label>حوزهٔ کاری (محله)</label>
+          <input class="input" name="district" maxlength="60" placeholder="مثلاً پاسداران"></div>
+        <div class="field"><label>تلفن مجموعه</label>
+          <input class="input num" name="phone" maxlength="20" placeholder="021-22233445"></div>
+      </div>
+      <div class="field"><label>معرفی کوتاه برای صفحهٔ شما</label>
+        <textarea class="input" name="about" maxlength="1200" placeholder="سابقه، تخصص‌ها، نکاتی که مشتری باید بداند…"></textarea></div>
+      <div class="field"><label>رنگ برند شما <span class="num" id="hueno">۱۷۲</span></label>
+        <input type="range" name="hue" min="0" max="359" value="172" id="hue"
+               data-live-var="#prev" data-live-text="#hueno">
+        <span class="hint">این رنگ در کارت‌ها و بلیت نوبت‌های شما استفاده می‌شود.</span></div>
+      <div class="biz" id="prev" style="--biz-hue:172;max-width:400px">
+        <div class="biz-top"><span class="biz-logo">نم</span>
+          <div class="grow"><h3>پیش‌نمایش نام برند</h3>
+            <span class="meta">شهر شما — دستهٔ خدمات</span></div>
+        </div>
+        <div class="biz-foot"><span class="price-from">شروع از<b>۳۵۰٬۰۰۰</b></span>
+          <span class="badge jade">{{ ic('bolt', 12) }} رزرو آنلاین</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 style="font-size:1.1rem">{{ ic('wallet', 16) }} پرداخت و کنسلی</h2>
+      <div class="grid g-2">
+        <div class="field"><label>نوع پرداخت</label>
+          <select class="input" name="payment_mode" id="pm"
+                  data-toggle-target="#dep" data-toggle-value="deposit">
+            <option value="full">پرداخت کامل آنلاین</option>
+            <option value="deposit">پیش‌پرداخت آنلاین + تسویه در محل</option>
+            <option value="free">بدون پرداخت آنلاین (پرداخت در محل)</option>
+          </select></div>
+        <div class="field" id="dep"><label>مبلغ پیش‌پرداخت (تومان)</label>
+          <input class="input num" name="deposit" value="100000" inputmode="numeric">
+          <span class="hint">در حالت «پرداخت کامل» این عدد خوانده نمی‌شود.</span></div>
+        <div class="field"><label>مدت قفل زمان در سبد (دقیقه)</label>
+          <input class="input num" name="hold_minutes" value="10" min="3" max="30" inputmode="numeric">
+          <span class="hint">در این مدت، زمان انتخاب‌شده به کسی دیگر داده نمی‌شود.</span></div>
+      </div>
+
+      <h3 style="font-size:1rem;margin-top:8px">قوانین کنسلی و بازپرداخت</h3>
+      <p class="tiny muted">هر قانون = یک آستانهٔ زمانی و درصد بازپرداخت. مثال: «تا ۲۴ ساعت قبل، ۵۰٪».</p>
+      <div class="stack" id="rules" style="gap:8px">
+        <div class="row rule" style="gap:8px">
+          <label class="tiny">حداقل</label>
+          <input class="input num" style="width:96px" name="rule_hours" value="24" inputmode="numeric">
+          <label class="tiny">ساعت تا شروع نوبت → بازپرداخت</label>
+          <input class="input num" style="width:88px" name="refund_24" data-refund value="50" inputmode="numeric">
+          <label class="tiny">٪</label>
+          <button type="button" class="btn btn-ghost btn-sm" data-rule-remove>حذف</button>
+        </div>
+        <div class="row rule" style="gap:8px">
+          <label class="tiny">حداقل</label>
+          <input class="input num" style="width:96px" name="rule_hours" value="2" inputmode="numeric">
+          <label class="tiny">ساعت تا شروع نوبت → بازپرداخت</label>
+          <input class="input num" style="width:88px" name="refund_2" data-refund value="0" inputmode="numeric">
+          <label class="tiny">٪</label>
+          <button type="button" class="btn btn-ghost btn-sm" data-rule-remove>حذف</button>
+        </div>
+      </div>
+      <button type="button" class="btn btn-ghost btn-sm" style="margin-top:8px" data-rule-add="#rules">
+        {{ ic('bolt', 14) }} افزودن قانون</button>
+      <template data-rule-tpl>
+        <div class="row rule" style="gap:8px">
+          <label class="tiny">حداقل</label>
+          <input class="input num" style="width:96px" name="rule_hours" value="1" inputmode="numeric">
+          <label class="tiny">ساعت تا شروع نوبت → بازپرداخت</label>
+          <input class="input num" style="width:88px" name="refund_1" data-refund value="0" inputmode="numeric">
+          <label class="tiny">٪</label>
+          <button type="button" class="btn btn-ghost btn-sm" data-rule-remove>حذف</button>
+        </div>
+      </template>
+    </section>
+
+    <div class="sticky-cta">
+      <button class="btn btn-lg" type="submit">{{ ic('check', 18) }} ثبت و ورود به پنل کسب‌وکار</button>
+      <p class="tiny muted">برای کسب‌وکارهای جدید، کمیسیون دورهٔ معرفی {{ fee_percent }}٪ در نظر گرفته می‌شود.</p>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% from "macros/ui.html" import ic %}
+{% block title %}{{ code }} — {{ title }}{% endblock %}
+{% block content %}
+<div class="section center" style="max-width:520px;margin:48px auto">
+  <div class="num" style="font-size:4rem;font-weight:800;color:var(--line-2);line-height:1">{{ code }}</div>
+  <h1>{{ title }}</h1>
+  <p class="muted">{{ text }}</p>
+  <div class="row center" style="justify-content:center;margin-top:16px">
+    <a class="btn" href="{{ url_for('public.home') }}">{{ ic('sparkle', 16) }} صفحهٔ اصلی</a>
+    <a class="btn btn-ghost" href="{{ url_for('public.search') }}">جست‌وجوی کسب‌وکار</a>
+    {% if code == 403 and user and user.role == 'customer' %}
+    <a class="btn btn-ghost" href="{{ url_for('business.new_biz') }}">کسب‌وکار خود را ثبت کنید</a>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

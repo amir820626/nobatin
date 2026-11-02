@@ -1,0 +1,72 @@
+{% macro ic(name, size=20) -%}
+<svg class="ic" width="{{ size }}" height="{{ size }}" aria-hidden="true" focusable="false"><use href="{{ url_for('static', filename='img/sprite.svg') }}#i-{{ name }}"></use></svg>
+{%- endmacro %}
+
+{% macro bizcard(b) -%}
+<a class="biz lift" href="{{ url_for('public.business_page', slug=b.slug) }}" style="{{ b.style or ('--biz-hue:%s' % b.hue) }}">
+  <div class="biz-top">
+    <span class="biz-logo">{{ b.initials or b.name[:1] }}</span>
+    <div class="grow">
+      <h3>{{ b.name }}</h3>
+      <div class="meta">
+        <span>{{ ic('pin', 14) }} {{ b.city_name or '' }}{% if b.district %} — {{ b.district }}{% endif %}</span>
+        <span>{{ ic('grid', 14) }} {{ b.cat_title or 'دستهٔ دیگر' }}</span>
+      </div>
+    </div>
+  </div>
+  {% if b.about %}<p class="desc">{{ b.about }}</p>{% endif %}
+  <div class="biz-foot">
+    <span class="price-from">شروع از
+      <b>{% if b.min_price %}{{ b.min_price|money }}<span class="tiny"> تومان</span>{% else %}—{% endif %}</b></span>
+    <span class="row" style="gap:8px">
+      {% if b.free_today is defined and b.free_today %}
+        <span class="free-pill">{{ b.free_today|fa }} زمان آزاد</span>
+      {% endif %}
+      <span class="badge jade">{{ ic('bolt', 12) }} رزرو آنلاین</span>
+    </span>
+  </div>
+</a>
+{%- endmacro %}
+
+{% macro empty(text, icn='inbox', sub='') -%}
+<div class="empty">
+  <div class="ic">{{ ic(icn, 42) }}</div>
+  <h3>{{ text }}</h3>
+  {% if sub %}<p class="small">{{ sub }}</p>{% endif %}
+  {{ caller() if caller else '' }}
+</div>
+{%- endmacro %}
+
+{% macro kpi(value, label, tone='') -%}
+<div class="card"><b class="{{ tone }}">{{ value|fa }}</b><span>{{ label }}</span></div>
+{%- endmacro %}
+
+{% macro status_badge(st) -%}
+{% set map = {
+  'confirmed': ('jade', 'تأییدشده'), 'pending_payment': ('amber', 'در انتظار پرداخت'),
+  'cancelled': ('berry', 'لغوشده'), 'completed': ('sky', 'انجام شد'),
+  'no_show': ('', 'حضور نیافت'), 'expired': ('', 'منقضی‌شده'),
+  'active': ('jade', 'تأییدشده'), 'pending': ('amber', 'در انتظار'), 'suspended': ('berry', 'معلق'),
+  'success': ('jade', 'موفق'), 'failed': ('berry', 'ناموفق'), 'created': ('amber', 'در جریان'),
+  'pending_refund': ('amber', 'در انتظار بازپرداخت'), 'refunded': ('sky', 'بازپرداخت شد'),
+  'paid': ('jade', 'پرداخت‌شده'), 'unpaid': ('', 'پرداخت‌نشده'), 'done': ('jade', 'انجام شد'),
+  'rejected': ('berry', 'ردشده'),
+  'sent': ('jade', 'ارسال‌شده'), 'skipped': ('amber', 'شماره پیامک‌پذیر نیست')
+} %}
+{% set cls, txt = map.get(st, ('', appt_status_label.get(st, st))) %}
+<span class="badge {{ cls }}"><i class="dot"></i>{{ txt }}</span>
+{%- endmacro %}
+
+{% macro policy_list(policy) -%}
+<ul class="stack" style="gap:8px">
+  {% for r in policy %}
+  <li class="row" style="gap:8px">
+    <span class="badge {{ 'jade' if r.refund_percent >= 100 else ('amber' if r.refund_percent > 0 else 'berry') }}">
+      {{ r.refund_percent|fa }}٪</span>
+    <span class="small">{{ r|min_hr_label }}</span>
+  </li>
+  {% else %}
+  <li class="small muted">قانون کنسلی تعریف نشده است.</li>
+  {% endfor %}
+</ul>
+{%- endmacro %}

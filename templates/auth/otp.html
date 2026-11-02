@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% from "macros/ui.html" import ic %}
+{% block title %}کد تأیید{% endblock %}
+{% block content %}
+<div class="section" style="max-width:440px;margin:34px auto">
+  <div class="card" style="box-shadow:var(--shadow-m)">
+    <div class="center" style="margin-bottom:16px">
+      <span class="cat-ic" style="width:58px;height:58px;border-radius:20px">{{ ic('shield', 28) }}</span>
+      <h1 style="font-size:1.3rem;margin-top:10px">کد را وارد کنید</h1>
+      <p class="small muted">کد پیامکی به <span class="num strong">{{ mobile }}</span> ارسال شد.
+        {% if known %}این شماره از قبل در نوبتین ثبت شده است.{% else %}با همین کد حساب شما ساخته می‌شود.{% endif %}</p>
+    </div>
+    {% if hint %}<div class="msg warn" style="margin-bottom:12px">{{ ic('bolt', 16) }} {{ hint }}</div>{% endif %}
+    <form method="post" action="{{ url_for('auth.verify_otp') }}">
+    {{ csrf() }}
+      <input type="hidden" name="mobile" value="{{ mobile }}">
+      <input type="hidden" name="next" value="{{ next }}">
+      <div class="field">
+        <label for="code">کد ۵ رقمی</label>
+        <input class="input num" id="code" name="code" inputmode="numeric" autocomplete="one-time-code"
+               maxlength="5" pattern="[0-9۰-۹]{5}" placeholder="۰۰۰۰۰" style="text-align:center;font-size:1.5rem;letter-spacing:.4em" required autofocus>
+      </div>
+      <button class="btn btn-block btn-lg" type="submit">{{ ic('check', 18) }} تأیید و ورود</button>
+    </form>
+    <div class="row-between" style="margin-top:14px">
+      <form method="post" action="{{ url_for('auth.send_otp') }}">
+      {{ csrf() }}
+        <input type="hidden" name="mobile" value="{{ mobile }}">
+        <input type="hidden" name="next" value="{{ next }}">
+        <button class="btn btn-ghost btn-sm" type="submit">ارسال دوبارهٔ کد</button>
+      </form>
+      <a class="small link" href="{{ url_for('auth.login') }}">تغییر شمارهٔ موبایل</a>
+    </div>
+    <p class="tiny muted center" style="margin-top:12px">کد تا ۳ دقیقه معتبر است. {{ resends|fa }} بار کد گرفته‌اید.</p>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,3 @@
+# نوبتین — فقط برای اجرای سرور لینوکسی (gunicorn روی Windows کار نمی‌کند).
+# نصب:  pip install -r requirements.txt -r deploy/requirements-server.txt
+gunicorn==23.0.0

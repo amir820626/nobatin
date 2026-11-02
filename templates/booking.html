@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% from "macros/ui.html" import ic, policy_list %}
+{% block title %}رزرو نوبت در {{ biz.name }} | نوبتین{% endblock %}
+{% block content %}
+<div class="section" style="margin-top:16px">
+  <div class="steps">
+    <span class="step on"><i>۱</i> سرویس و زمان</span><span class="step-line"></span>
+    <span class="step"><i>۲</i> ورود سریع</span><span class="step-line"></span>
+    <span class="step"><i>۳</i> پرداخت و قطعی‌شدن</span>
+  </div>
+
+  <div class="row-between" style="margin-bottom:14px">
+    <div class="row" style="{{ biz.style }}">
+      <span class="biz-logo" style="width:48px;height:48px;border-radius:16px">{{ biz.initials }}</span>
+      <div>
+        <h1 style="font-size:1.3rem;margin:0">{{ biz.name }}</h1>
+        <span class="small muted">{{ ic('pin', 13) }} {{ biz.city_name }} — {{ biz.cat_title }}</span>
+      </div>
+    </div>
+    <a class="btn btn-ghost btn-sm" href="{{ url_for('public.business_page', slug=biz.slug) }}">
+      {{ ic('arrow-back', 14) }} صفحهٔ کسب‌وکار</a>
+  </div>
+
+  <div class="two-col booking-cols">
+    <div class="stack">
+      <section class="card col-svc">
+        <div class="t" style="margin-bottom:12px"><span class="eyebrow">{{ ic('sparkle', 13) }} گام ۱</span>
+          <h2 style="font-size:1.15rem">خدمت موردنظر</h2></div>
+        <div class="grid g-2" style="gap:10px">
+          {% for s in services %}
+          <a class="svc {% if svc and s.id == svc.id %}on{% endif %}" style="{{ 'border-color:var(--ink);box-shadow:var(--shadow-m)' if svc and s.id==svc.id }}"
+             href="{{ url_for('booking.pick', slug=biz.slug, date=iso, service=s.id) }}">
+            <span class="n">{{ loop.index|fa }}</span>
+            <div class="grow"><b>{{ s.title }}</b>
+              <span class="d">{{ ic('clock', 13) }} {{ s.duration_min|dur }}</span></div>
+            <div class="p"><b>{{ s.price|money }}</b><span class="d">تومان</span></div>
+          </a>
+          {% else %}<p class="muted">این کسب‌وکار خدمتی برای رزرو آنلاین ندارد.</p>{% endfor %}
+        </div>
+      </section>
+
+      <section class="card col-time">
+        <div class="t" style="margin-bottom:12px"><span class="eyebrow">{{ ic('cal', 13) }} گام ۲</span>
+          <h2 style="font-size:1.15rem">روز و ساعت</h2></div>
+
+        <div class="daystrip">
+          {% for d in strip(12) %}
+          <a class="day {{ 'on' if d.iso == iso }} {{ 'off' if avail.get(d.iso, 0) == 0 }}"
+             href="{{ url_for('booking.pick', slug=biz.slug, date=d.iso, service=(svc.id if svc else none)) }}">
+            <span>{{ 'امروز' if d.today else d.weekday }}</span><b>{{ d.day }}</b><span>{{ d.month }}</span>
+            <small>{{ fa(avail[d.iso]) if d.iso in avail else '۰' }}</small>
+          </a>
+          {% endfor %}
+        </div>
+        <p class="tiny muted" style="margin-top:-4px">عدد زیر هر روز = تعداد زمان‌های آزاد آن روز</p>
+
+        {% set g = jd(iso) %}
+        {% set cal = grid(g.year, g.month) %}
+        <div class="row-between" style="margin:14px 0 10px">
+          <div class="row" style="gap:8px">
+            <a class="chip" href="{{ url_for('booking.pick', slug=biz.slug, date=cal.prev.iso, service=(svc.id if svc else none)) }}">
+              {{ ic('chev-l', 14) }} ماه قبل</a>
+            <span class="chip on">{{ cal.month_name }} {{ cal.year|fa }}</span>
+            <a class="chip" href="{{ url_for('booking.pick', slug=biz.slug, date=cal.next.iso, service=(svc.id if svc else none)) }}">
+              ماه بعد {{ ic('chev-r', 14) }}</a>
+          </div>
+          <a class="btn btn-ghost btn-sm" href="{{ url_for('booking.pick', slug=biz.slug, date=today_iso, service=(svc.id if svc else none)) }}">امروز</a>
+        </div>
+
+        <div class="cal">
+          <table>
+            <thead><tr>{% for w in ['ش','ی','د','س','چ','پ','ج'] %}<th>{{ w }}</th>{% endfor %}</tr></thead>
+            <tbody>
+              {% for week in cal.weeks %}
+              <tr>
+                {% for c in week %}
+                <td>
+                  {% set n = avail.get(c.iso, 0) %}
+                  {% if c.in_month and not c.is_past and n > 0 %}
+                  <a class="d {{ 'today' if c.is_today }} {{ 'has' if n }} {{ 'on' if c.iso == iso }}"
+                     href="{{ url_for('booking.pick', slug=biz.slug, date=c.iso, service=(svc.id if svc else none)) }}">{{ c.day|fa }}</a>
+                  {% else %}
+                  <span class="d out {{ 'past' if c.is_past or not c.in_month }} {{ 'today' if c.is_today }}">{{ c.day|fa }}</span>
+                  {% endif %}
+                </td>
+                {% endfor %}
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        {% if blocked %}
+          <div class="msg warn">{{ ic('bolt', 16) }} کسب‌وکار این روز را تعطیل اعلام کرده است.</div>
+        {% elif no_hours %}
+          <div class="msg info">{{ ic('cal', 16) }} برای این روز ساعات کاری تعریف نشده است.</div>
+        {% elif not free %}
+          <div class="msg info">{{ ic('clock', 16) }} زمان آزادی در این روز نمانده است؛ روز دیگری را انتخاب کنید.</div>
+        {% endif %}
+
+        <div class="slots">
+          {% for s in slots %}
+          <button type="button" class="slot {{ 'past' if s.past }} {{ 'taken' if s.taken }} {{ 'mine' if s.mine }}"
+                  data-hm="{{ s.hm }}" {% if s.past or s.taken %}disabled{% endif %}>
+            {{ s.label }}
+            {% if s.mine %}<span class="dur">سبد شما</span>
+            {% elif s.taken %}<span class="dur">رزروشده</span>
+            {% elif s.past %}<span class="dur">گذشته</span>
+            {% else %}<span class="dur">آزاد</span>{% endif %}
+          </button>
+          {% endfor %}
+        </div>
+        <div class="legend">
+          <span><i style="background:var(--paper-2)"></i>آزاد</span>
+          <span><i style="background:#efebe1"></i>رزروشده یا گذشته</span>
+          <span><i style="background:var(--saffron-soft);border-color:var(--saffron)"></i>در سبد شما</span>
+        </div>
+      </section>
+
+      <section class="card col-rules">
+        <div class="t"><span class="eyebrow">{{ ic('shield', 13) }} گام ۳</span>
+          <h2 style="font-size:1.15rem">تأیید و پرداخت</h2></div>
+        <p class="small muted">با انتخاب «ادامه» یک سبد ۱۰ دقیقه‌ای روی این زمان قفل می‌شود. پس از ورود با کد پیامکی، درگاه باز می‌شود. تا پرداخت موفق، نوبت قطعی نیست.</p>
+        <div class="info-list small" style="{{ biz.style }}">
+          <div class="info-item">{{ ic('wallet', 15) }}
+            <span>
+              {% if biz.payment_mode == 'free' %}پرداخت در محل — بدون پرداخت آنلاین{% endif %}
+              {% if biz.payment_mode == 'deposit' %}پیش‌پرداخت آنلاین هنگام رزرو{% endif %}
+              {% if biz.payment_mode == 'full' %}پرداخت کامل آنلاین هنگام رزرو{% endif %}
+            </span></div>
+          <div class="info-item">{{ ic('phone', 15) }} <span>پیامک تأیید و یادآوری به شمارهٔ شما</span></div>
+        </div>
+        <hr class="thin">
+        <h3 style="font-size:.95rem">قوانین کنسلی همین مجموعه</h3>
+        {{ policy_list(policy) }}
+      </section>
+    </div>
+
+    <aside class="sticky-cta col-side">
+      <form method="post" action="{{ url_for('booking.take', slug=biz.slug) }}" id="pickform"
+            data-duration="{{ svc.duration_min if svc else 0 }}">
+      {{ csrf() }}
+        <input type="hidden" name="date" value="{{ iso }}">
+        <input type="hidden" name="service" value="{{ svc.id if svc else '' }}">
+        <input type="hidden" name="time" id="picked" value="">
+        <div class="ticket" style="{{ biz.style }}">
+          <span class="stub"></span>
+          <div class="ticket-head">
+            <div>
+              <h3>{{ svc.title if svc else 'سرویسی انتخاب نشده' }}</h3>
+              <span class="small muted">{{ biz.name }}</span>
+            </div>
+            <span class="badge {{ 'jade' if free else 'berry' }}">{{ free|length|fa }} زمان آزاد</span>
+          </div>
+          <div class="when">
+            <div class="big" id="bigtime"><span id="bigclock">—:—</span><small id="bigdate">{{ iso|jdate }}</small></div>
+            <dl class="kv grow">
+              <dt>مدت</dt><dd>{{ svc.duration_min|dur if svc else '—' }}</dd>
+              <dt>پایان</dt><dd id="endtime">—</dd>
+              <dt>ورودی</dt><dd class="small">با کد پیامکی</dd>
+            </dl>
+          </div>
+          <div class="perforated"></div>
+          <div class="ticket-foot">
+            <div>
+              <span class="tiny muted">{% if biz.payment_mode == 'deposit' %}پیش‌پرداخت الآن{% elif biz.payment_mode == 'free' %}پرداخت الآن{% else %}مبلغ کل{% endif %}</span>
+              <div class="money" style="font-size:1.2rem">
+                {% if biz.payment_mode == 'free' %}۰ <span class="tiny">تومان</span>
+                {% else %}{{ (svc.pay_now if biz.payment_mode == 'deposit' and svc else (svc.price if svc else 0))|money }} <span class="tiny">تومان</span>{% endif %}
+              </div>
+              {% if biz.payment_mode == 'deposit' and svc %}
+                <span class="tiny muted">{{ (svc.price - svc.pay_now)|money }} تومان در محل تسویه می‌شود</span>
+              {% endif %}
+            </div>
+            <button class="btn btn-lg" type="submit" id="cont" disabled>{{ ic('bolt', 17) }} ادامه و قفل زمان</button>
+          </div>
+        </div>
+        <p class="msg info small" id="pickhint" hidden style="margin-top:10px">
+          {{ ic('clock', 15) }} نخست یک ساعت آزاد را از فهرست انتخاب کنید.</p>
+        <p class="tiny center" id="needsigin" style="margin-top:10px;color:var(--ink-3)">
+          {% if not user %}برای ادامه، وارد حساب خود می‌شوید (فقط با کد پیامکی).{% endif %}</p>
+      </form>
+    </aside>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+  <script src="{{ asset('js/booking.js') }}" defer></script>
+{% endblock %}

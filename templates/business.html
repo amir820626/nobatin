@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% from "macros/ui.html" import ic, bizcard, policy_list, empty %}
+{% block title %}{{ biz.name }} — {{ biz.cat_title }} در {{ biz.city_name }} | نوبتین{% endblock %}
+{% block desc %}رزرو آنلاین نوبت در {{ biz.name }}{% endblock %}
+{% block content %}
+<div class="section" style="margin-top:18px">
+  <div class="row small muted" style="gap:6px">
+    <a href="{{ url_for('public.home') }}">نوبتین</a><span>›</span>
+    <a href="{{ url_for('public.category_page', cid=biz.category_id) }}">{{ biz.cat_title }}</a><span>›</span>
+    <a href="{{ url_for('public.search', city=biz.city_id) }}">{{ biz.city_name }}</a><span>›</span>
+    <span class="strong">{{ biz.name }}</span>
+  </div>
+
+  <section class="biz-hero" style="{{ biz.style }}">
+    <div class="row">
+      <span class="biz-logo">{{ biz.initials }}</span>
+      <div class="grow">
+        <div class="row" style="gap:8px;margin-bottom:4px">
+          <span class="badge ink">{{ ic('grid', 12) }} {{ biz.cat_title }}</span>
+          <span class="badge jade">{{ ic('bolt', 12) }} {{ biz.mode_label }}</span>
+          {% if sold %}<span class="rating">{{ ic('check', 12) }} {{ sold|fa }} نوبت قطعی
+            <span class="tiny">(تأییدشده)</span></span>{% endif %}
+        </div>
+        <h1>{{ biz.name }}</h1>
+        <p class="small muted" style="margin:0">{{ biz.about }}</p>
+      </div>
+      <div class="stack" style="gap:10px;min-width:190px">
+        <a class="btn btn-lg" href="{{ url_for('booking.pick', slug=biz.slug) }}">{{ ic('cal', 18) }} گرفتن نوبت</a>
+        <div class="row" style="gap:8px">
+          <span class="badge amber">{{ sold|fa }} نوبت قطعی</span>
+          {% if free_today %}<span class="badge jade">{{ free_today|fa }} زمان آزاد امروز</span>
+          {% elif blocked %}<span class="badge berry">امروز تعطیل است</span>{% endif %}
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="two-col">
+  <div class="stack">
+    <section class="card">
+      <div class="section-head" style="margin-bottom:10px">
+        <div class="t"><span class="eyebrow">{{ ic('sparkle', 13) }} خدمات</span><h2 style="font-size:1.15rem">چه چیزی می‌توانید رزرو کنید</h2></div>
+        <span class="tiny muted">قیمت‌ها تومان است</span>
+      </div>
+      <div class="stack" style="gap:10px;--biz-hue:{{ biz.hue }}">
+        {% for s in services %}
+        <div class="svc">
+          <span class="n">{{ loop.index|fa }}</span>
+          <div class="grow">
+            <b>{{ s.title }}</b>
+            <span class="d">{{ s.description or '—' }}</span>
+            <span class="row tiny muted" style="gap:12px;margin-top:4px">
+              <span>{{ ic('clock', 13) }} {{ s.duration_min|dur }}</span>
+              {% if biz.payment_mode == 'deposit' %}<span>{{ ic('wallet', 13) }} پیش‌پرداخت {{ s.pay_now|money }} تومان</span>{% endif %}
+            </span>
+          </div>
+          <div class="p">
+            <b>{{ s.price|money }}</b><span class="d">تومان</span><br>
+            <a class="btn btn-sm" href="{{ url_for('booking.pick', slug=biz.slug, service=s.id) }}">رزرو</a>
+          </div>
+        </div>
+        {% else %}
+          {{ empty('فعلاً خدمتی تعریف نشده است.', 'inbox') }}
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="t" style="margin-bottom:10px"><span class="eyebrow">{{ ic('shield', 13) }} قوانین</span>
+        <h2 style="font-size:1.15rem">قوانین کنسلی و بازپرداخت این مجموعه</h2></div>
+      <p class="small muted">این قوانین در لحظهٔ رزرو روی نوبت شما ثبت می‌شود؛ حتی اگر بعداً تغییر کند، نوبت شما با همان قوانین قبلی محاسبه می‌شود.</p>
+      {{ policy_list(policy) }}
+      <hr class="thin">
+      <dl class="kv">
+        <dt>نوع پرداخت</dt><dd>{{ biz.mode_label }}</dd>
+        {% if biz.payment_mode == 'deposit' %}<dt>پیش‌پرداخت</dt><dd>{{ biz.deposit_amount|money }} تومان</dd>{% endif %}
+        <dt>قفل زمان در سبد</dt><dd>{{ biz.hold_minutes|fa }} دقیقه</dd>
+      </dl>
+    </section>
+
+    <section class="card">
+      <div class="t" style="margin-bottom:10px"><span class="eyebrow">{{ ic('pin', 13) }} دسترسی</span>
+        <h2 style="font-size:1.15rem">نشانی و ساعات کاری</h2></div>
+      <div class="info-list" style="{{ biz.style }}">
+        <div class="info-item">{{ ic('pin', 17) }} <span>{{ biz.address }}{% if biz.district %} — {{ biz.district }}{% endif %}</span></div>
+        <div class="info-item">{{ ic('phone', 17) }} <span class="num">{{ biz.phone }}</span></div>
+        <div class="info-item">{{ ic('cal', 17) }} <span>{{ biz.city_name }}، {{ biz.prov_name }}</span></div>
+      </div>
+      <hr class="thin">
+      <div class="grid g-2" style="gap:8px">
+        {% for h in hours %}
+        <div class="row small" style="justify-content:space-between">
+          <span class="strong">{{ ['شنبه','یکشنبه','دوشنبه','سه‌شنبه','چهارشنبه','پنج‌شنبه','جمعه'][h.weekday] }}</span>
+          <span class="num">{{ h.start_hm|fa }} تا {{ h.end_hm|fa }} <span class="tiny muted">({{ h.slot_min|fa }} دقیقه هر نوبت)</span></span>
+        </div>
+        {% else %}<span class="small muted">ساعات کاری تعریف نشده است.</span>{% endfor %}
+      </div>
+    </section>
+
+    {% if similar %}
+    <section class="section">
+      <div class="section-head"><div class="t"><h2 style="font-size:1.1rem">مشابه در نوبتین</h2></div></div>
+      <div class="grid g-2">{% for b in similar %}{{ bizcard(b) }}{% endfor %}</div>
+    </section>
+    {% endif %}
+  </div>
+
+  <aside class="stack" style="position:sticky;top:calc(var(--nav-h) + 14px)">
+    <div class="card">
+      <div class="t" style="margin-bottom:12px"><span class="eyebrow">{{ ic('cal', 13) }} تقویم</span>
+        <h3>روزهای پیش‌رو</h3></div>
+      <div class="daystrip">
+        {% for d in strip(10) %}
+        <a class="day {{ 'on' if d.iso == iso }}" href="{{ url_for('public.business_page', slug=biz.slug, date=d.iso) }}">
+          <span>{{ d.weekday }}</span><b>{{ d.day }}</b><span>{{ d.month }}</span>
+        </a>
+        {% endfor %}
+      </div>
+      <p class="tiny muted">زمان‌های آزاد این روز: {{ free_today|fa }} عدد</p>
+      <div class="slots" style="grid-template-columns:repeat(auto-fill,minmax(74px,1fr))">
+        {% for s in preview_slots[:14] %}
+        <a class="slot {{ 'past' if s.past }} {{ 'taken' if s.taken }}"
+           href="{{ url_for('booking.pick', slug=biz.slug, date=iso, service=(services[0].id if services else none), time=s.hm) }}">{{ s.label }}</a>
+        {% else %}<span class="small muted">زمانی موجود نیست.</span>{% endfor %}
+      </div>
+      <a class="btn btn-block btn-lg" style="margin-top:14px" href="{{ url_for('booking.pick', slug=biz.slug) }}">
+        {{ ic('ticket', 18) }} انتخاب زمان و رزرو</a>
+      {% if blocked %}<p class="msg warn" style="margin-top:10px">{{ ic('bolt', 16) }} این روز تعطیل اعلام شده است.</p>{% endif %}
+    </div>
+
+    <div class="card card-flat">
+      <h3 style="font-size:.98rem">{{ ic('shield', 16) }} چرا نوبتین؟</h3>
+      <ul class="stack small" style="gap:8px;color:var(--ink-2)">
+        <li>{{ ic('check', 15) }} یک زمان فقط به یک نفر داده می‌شود؛ قفل ۱۰ دقیقه‌ای هنگام پرداخت.</li>
+        <li>{{ ic('check', 15) }} پرداخت ناموفق = بدون نوبت. زمان فوراً به تقویم برمی‌گردد.</li>
+        <li>{{ ic('check', 15) }} پیامک تأیید، یادآوری و وضعیت بازپرداخت.</li>
+      </ul>
+    </div>
+  </aside>
+</div>
+{% endblock %}

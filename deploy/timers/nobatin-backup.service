@@ -1,0 +1,12 @@
+[Unit]
+Description=Nobatin: online SQLite backup + integrity check
+
+[Service]
+Type=oneshot
+User=nobatin
+Group=nobatin
+WorkingDirectory=/srv/nobatin
+EnvironmentFile=/srv/nobatin/.env
+Environment=NOBATIN_ENV=production
+ExecStart=/bin/bash /srv/nobatin/deploy/backup.sh
+Nice=15

@@ -1,0 +1,4 @@
+# ساخت Issue آزاد است (کارفرما و بازبین‌ها می‌توانند سؤال/نظر هم بدهند).
+# برای آسیب‌پذیری امنیتی از این فهرست نروید: تب Security → Report a
+# vulnerability خصوصی است؛ راهنما در SECURITY.md.
+blank_issues_enabled: true

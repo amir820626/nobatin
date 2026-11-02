@@ -1,0 +1,10 @@
+[Unit]
+Description=هر ۵ دقیقه: یادآوری‌های معوق نوبت‌ها
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=5min
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

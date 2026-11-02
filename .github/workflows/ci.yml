@@ -1,0 +1,232 @@
+name: CI
+
+# سه کار: (۱) آزمون‌ها روی پایتون ۳.۱۰ تا ۳.۱۳، (۲) بالا آمدن واقعیِ حالت
+# production و بررسی سرصفحه‌ها و /healthz، (۳) بهداشت مخزن: هیچ راز یا دیتابیس
+# ردگیری نشده باشد و قالب‌ها اسکریپت درون‌خطی نداشته باشند.
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: آزمون‌ها (Python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+
+      - name: نصب وابستگی‌ها
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: گرامر پایتون (سریع‌ترین ترمز)
+        run: python -m compileall -q app.py wsgi.py smoke_test.py core routes tools
+
+      - name: آزمون end-to-end (۳۵ بخش)
+        env:
+          # در CI سقف نرخ لازم نیست؛ آزمون‌ها خودشان پایگاه دادهٔ موقت می‌سازند.
+          NOBATIN_ENV: development
+          NOBATIN_LIMIT_WRITES_PER_MIN: "0"
+          NOBATIN_LIMIT_BOOKINGS_PER_HOUR: "0"
+          NOBATIN_LIMIT_HOLDS_PER_HOUR: "0"
+          NOBATIN_LIMIT_BIZ_PER_DAY: "0"
+        run: python smoke_test.py
+
+      - name: خودآزمایی (python app.py --selfcheck)
+        env:
+          NOBATIN_ENV: development
+        run: |
+          python app.py --selfcheck
+          # --selfcheck با کد ۰ یعنی «آمادهٔ سرور»؛ هشدارها خطا نیستند.
+
+      - name: production بدون NOBATIN_SECRET بالا نمی‌آید
+        env:
+          NOBATIN_ENV: production
+          NOBATIN_TRUSTED_HOSTS: example.com
+          NOBATIN_SECRET: ""
+          NOBATIN_OTP_MASTER: "0"
+        run: |
+          python - <<'PY'
+          import sys
+          try:
+              # خودِ `import app` نمونه را می‌سازد (app = create_app(...))، پس
+              # RuntimeError در همان خط import رخ می‌دهد؛ import هم داخل try است.
+              import app
+              app.create_app(env_name="production")
+          except RuntimeError as exc:
+              print("fail-closed درست کار کرد:", str(exc)[:90])
+              sys.exit(0)
+          sys.exit("production بدون راز بالا آمد — این نباید بشود")
+          PY
+
+      - name: production با کد ثابتِ توسعه (NOBATIN_OTP_MASTER=1) بالا نمی‌آید
+        env:
+          NOBATIN_ENV: production
+          NOBATIN_TRUSTED_HOSTS: example.com
+          NOBATIN_SECRET: ci-only-throwaway-value-not-a-real-secret-0123456789
+          NOBATIN_OTP_MASTER: "1"
+          NOBATIN_ALLOW_SANDBOX: "1"
+        run: |
+          python - <<'PY'
+          import sys
+          try:
+              # خودِ `import app` نمونه را می‌سازد (app = create_app(...))، پس
+              # RuntimeError در همان خط import رخ می‌دهد؛ import هم داخل try است.
+              import app
+              app.create_app(env_name="production")
+          except RuntimeError as exc:
+              print("رد شد همان‌طور که باید:", str(exc)[:90])
+              sys.exit(0)
+          sys.exit("کد ثابتِ توسعه در production پذیرفته شد — این نباید بشود")
+          PY
+
+  production-boot:
+    name: اجرای واقعی production + سرصفحه‌ها
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: نصب وابستگی‌ها
+        run: pip install -r requirements.txt
+
+      - name: بالا آوردن waitress در حالت production
+        env:
+          NOBATIN_ENV: production
+          NOBATIN_SECRET: ci-only-throwaway-value-not-a-real-secret-0123456789
+          NOBATIN_TRUSTED_HOSTS: 127.0.0.1,localhost
+          NOBATIN_PAYMENT_PROVIDER: sandbox
+          NOBATIN_ALLOW_SANDBOX: "1"
+          NOBATIN_SMS_PROVIDER: log
+          NOBATIN_OTP_MASTER: "0"
+          NOBATIN_COOKIE_SECURE: "0"
+        run: |
+          # همان نقطهٔ ورودی که در deploy/README.md توصیه می‌شود: python wsgi.py
+          NOBATIN_PORT=8099 python wsgi.py > /tmp/nobatin.log 2>&1 &
+          echo $! > /tmp/nobatin.pid
+          for i in $(seq 1 40); do
+            curl -fsS -o /dev/null -H 'Host: 127.0.0.1' http://127.0.0.1:8099/ && break
+            sleep 1
+            [ "$i" = "40" ] && { echo "سرور بالا نیامد:"; cat /tmp/nobatin.log; exit 1; }
+          done
+
+      - name: صفحهٔ عمومی و سرصفحه‌های امنیتی
+        run: |
+          set -e
+          h=$(curl -fsSI -H 'Host: 127.0.0.1' http://127.0.0.1:8099/)
+          echo "$h" | grep -qi 'content-security-policy'   || { echo "CSP نیست"; exit 1; }
+          echo "$h" | grep -qi 'x-frame-options: DENY'     || { echo "X-Frame-Options نیست"; exit 1; }
+          echo "$h" | grep -qi 'x-content-type-options: nosniff' || { echo "nosniff نیست"; exit 1; }
+          echo "$h" | grep -qi 'referrer-policy'           || { echo "Referrer-Policy نیست"; exit 1; }
+          echo "$h" | grep -qi 'permissions-policy'        || { echo "Permissions-Policy نیست"; exit 1; }
+          echo "$h" | grep -qi 'strict-transport-security' || { echo "HSTS نیست"; exit 1; }
+          echo "سرصفحه‌ها ✔"
+
+      - name: هاست ناشناختی ۴۰۰ می‌گیرد
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' -H 'Host: evil.example' http://127.0.0.1:8099/)
+          [ "$code" = "400" ] || { echo "کد $code آمد، انتظار ۴۰۰"; exit 1; }
+          echo "host gate ✔"
+
+      - name: /healthz بر پایهٔ IP سوکت است، نه X-Forwarded-For
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' \
+                 -H 'Host: 127.0.0.1' -H 'X-Forwarded-For: 8.8.8.8' \
+                 http://127.0.0.1:8099/healthz)
+          # از loopback باید باز شود؛ چون ملاک نشانی واقعی سوکت است، هدر جعلی
+          # نمی‌تواند آن را از بیرون باز کند (همین را smoke_test بخش ۳۵ می‌سنجد).
+          [ "$code" = "200" ] || { echo "healthz از loopback کد $code داد"; exit 1; }
+          curl -fsS -H 'Host: 127.0.0.1' http://127.0.0.1:8099/healthz | grep -q '"status"'
+          echo "healthz ✔"
+
+      - name: جست‌وجوی فارسی روی همان سرور
+        run: |
+          curl -fsS -H 'Host: 127.0.0.1' --get \
+            --data-urlencode 'q=ماساژ' http://127.0.0.1:8099/jostojoo | grep -q 'نوبتین'
+
+      - name: خاموش‌کردن و لاگ
+        if: always()
+        run: |
+          tail -20 /tmp/nobatin.log || true
+          kill "$(cat /tmp/nobatin.pid)" 2>/dev/null || true
+
+  hygiene:
+    name: بهداشت مخزن
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: هیچ دادهٔ کاربری، دیتابیس یا راز ردگیری نشده
+        run: |
+          set -e
+          # نکته: .env.example باید ردگیری شود، پس از الگو بیرون است. هر چیز دیگری
+          # که با .env شروع می‌شود (.env، .env.local، .env.production) و هر
+          # دیتابیس/لاگ/کلید خطا است.
+          bad=$(git ls-files | grep -E '(^|/)instance/|(^|/)\.env($|[.-])|\.(db|sqlite|sqlite3|pem|key|log)$' \
+                 | grep -vE '(^|/)\.env\.example$' || true)
+          if [ -n "$bad" ]; then echo "این فایل‌ها نباید ردگیری شوند:"; echo "$bad"; exit 1; fi
+          # .env.example تنها استثناست و باید بدون مقدارِ واقعی باشد.
+          if git ls-files | grep -qx '.env.example'; then
+            if grep -qE 'NOBATIN_SECRET=.+' .env.example; then
+              echo '.env.example مقدارِ NOBATIN_SECRET دارد'; exit 1; fi
+          fi
+          echo "ردگیری پاک ✔"
+
+      - name: ردپای شخصی در فایل‌های متنی نباشد
+        run: |
+          set -e
+          # خودِ این فایل نام‌های مورد جست‌وجو را در الگوی grep دارد، پس بیرون
+          # نگه داشته می‌شود؛ بقیهٔ فایل‌های ردگیری‌شده بررسی می‌شوند.
+          # الگو فقط مسیرِ مطلقِ ماشین توسعه را می‌گیرد؛ `cd ~/Desktop/nobat` که در
+          # راهنماآموزش استفاده شده قابل‌انتشار است (نام کاربری ندارد).
+          hits=$(git ls-files -z | grep -zv '^\.github/workflows/ci\.yml$' \
+                 | xargs -0 grep -lI -E 'C:\\+Users\\+|/c/[Uu]sers/|/home/[a-z]{3,}|Thinkpad' 2>/dev/null || true)
+          if [ -n "$hits" ]; then echo "مسیرِ ماشینِ توسعه در:"; echo "$hits"; exit 1; fi
+          echo "بدون ردپای شخصی ✔"
+
+      - name: قالب‌ها اسکریپت درون‌خطی ندارند (CSP بدون unsafe-inline)
+        run: |
+          set -e
+          # تنها <script src="…"> مجاز است؛ پس هر <script> که src نداشته باشد خطاست.
+          hits=$(grep -rIn '<script' templates/ | grep -v 'src=' || true)
+          if [ -n "$hits" ]; then echo "اسکریپت درون‌خطی:"; echo "$hits"; exit 1; fi
+          handlers=$(grep -rIn -E 'on(click|load|change|error|submit|input)=' templates/ static/ || true)
+          if [ -n "$handlers" ]; then echo " هندلرِ درون‌خطی (CSP بلوکش می‌کند):"; echo "$handlers"; exit 1; fi
+          # style-src می‌تواند unsafe-inline داشته باشد (ویژگی style در قالب‌ها)،
+          # اما script-src هرگز.
+          if grep -rIn -E "script-src[^\";]*unsafe-inline" core/ app.py routes/; then
+            echo "unsafe-inline در script-src پیدا شد"; exit 1
+          fi
+          echo "قالب‌ها پاک ✔"
+
+      - name: وابستگی بیرونی (CDN) در قالب‌ها نیست
+        run: |
+          set -e
+          hits=$(grep -rIn -E 'src="https?://|href="https?://(cdn|unpkg|jsdelivr|fonts\.googleapis)' templates/ static/ || true)
+          if [ -n "$hits" ]; then echo "بارگذاری از CDN:"; echo "$hits"; exit 1; fi
+          echo "همه‌چیز محلی ✔"
